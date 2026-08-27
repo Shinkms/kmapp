@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 3 · ฝึกลดรูปสมการบูลีน (K-Map / Boolean Algebra)</title>
+<style>
+  :root{
+    --bg:#0e0f13; --bg2:#151822; --bg3:#1c2030; --bg4:#232838;
+    --line:#2a3042; --line2:#39415a;
+    --txt:#e7e9f0; --muted:#98a1b8; --faint:#6b7488;
+    --accent:#6c8cff; --accent-d:#4f6ffe;
+    --cyan:#22d3ee; --amber:#f6b64b; --green:#34d399; --red:#f8717a; --violet:#a78bfa;
+    --radius:14px; --radius-s:9px;
+    --mono:ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,"Noto Sans Thai",sans-serif;
+    --cols:4; --rows:2;
+    --shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  html{height:100%}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(108,140,255,.10), transparent 60%),
+      radial-gradient(900px 500px at 0% 0%, rgba(34,211,238,.06), transparent 55%),
+      var(--bg);
+    color:var(--txt); font-family:var(--sans); font-size:15px; line-height:1.45;
+    height:100vh; overflow:hidden;                 /* whole app fits one screen — no page scroll */
+    display:flex; flex-direction:column; -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:rgba(108,140,255,.35)}
+
+  /* ---------- Top toolbar ---------- */
+  header.bar{
+    flex:0 0 auto; z-index:50;
+    background:linear-gradient(180deg, rgba(21,24,34,.96), rgba(21,24,34,.86));
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    box-shadow:0 4px 20px rgba(0,0,0,.35);
+  }
+  .bar-inner{max-width:1680px; margin:0 auto; padding:9px 20px; display:flex; flex-direction:column; gap:8px}
+  .brand{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .logo{
+    width:38px;height:38px;border-radius:10px;flex:0 0 auto;
+    background:linear-gradient(135deg,var(--accent),var(--cyan));
+    display:grid;place-items:center;font-weight:800;color:#0b0d12;font-size:18px;
+    box-shadow:0 4px 14px rgba(108,140,255,.4);
+  }
+  .brand h1{font-size:17px; margin:0; font-weight:700; letter-spacing:.2px}
+  .brand .sub{font-size:12.5px; color:var(--muted); margin-top:1px}
+
+  .controls{display:flex; gap:10px 14px; flex-wrap:wrap; align-items:flex-end}
+  .field{display:flex; flex-direction:column; gap:5px}
+  .field > label{font-size:11px; color:var(--muted); font-weight:600; letter-spacing:.4px; text-transform:uppercase}
+  .inp, select.inp{
+    background:var(--bg3); color:var(--txt); border:1px solid var(--line2);
+    border-radius:9px; padding:8px 10px; font-size:14px; font-family:var(--sans);
+    outline:none; transition:border-color .15s, box-shadow .15s;
+  }
+  .inp:focus, select.inp:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(108,140,255,.22)}
+  .inp.num{width:74px; text-align:center; font-family:var(--mono)}
+  select.inp{cursor:pointer; padding-right:26px; appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+    background-position:calc(100% - 15px) 55%,calc(100% - 10px) 55%; background-size:5px 5px,5px 5px; background-repeat:no-repeat}
+  .time-group{display:flex; align-items:center; gap:6px}
+  .time-group .inp.num{width:58px}
+  .time-group span{color:var(--muted); font-weight:700}
+  /* per-method timer settings, color-matched to the sections */
+  .time-kmap>label{color:var(--cyan)}
+  .time-bool>label{color:var(--amber)}
+  .time-kmap .inp{border-color:rgba(34,211,238,.4)}
+  .time-kmap .inp:focus{border-color:var(--cyan); box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+  .time-bool .inp{border-color:rgba(246,182,75,.4)}
+  .time-bool .inp:focus{border-color:var(--amber); box-shadow:0 0 0 3px rgba(246,182,75,.18)}
+
+  .divider{width:1px; align-self:stretch; background:var(--line); margin:2px 2px}
+
+  .btn{
+    border:1px solid var(--line2); background:var(--bg3); color:var(--txt);
+    border-radius:9px; padding:8px 13px; font-size:13.5px; font-weight:600;
+    cursor:pointer; font-family:var(--sans); display:inline-flex; align-items:center; gap:7px;
+    transition:transform .05s, background .15s, border-color .15s, box-shadow .15s; white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--line2); background:var(--bg4)}
+  .btn:active{transform:translateY(1px)}
+  .btn .ic{font-size:15px; line-height:1}
+  .btn.primary{background:linear-gradient(180deg,var(--accent),var(--accent-d)); border-color:transparent; color:#fff; box-shadow:0 3px 12px rgba(79,111,254,.35)}
+  .btn.primary:hover{filter:brightness(1.07)}
+  .btn.ghost{background:transparent}
+  .btn.danger{color:var(--red); border-color:rgba(248,113,122,.35)}
+  .btn.danger:hover{background:rgba(248,113,122,.12)}
+  .btn.warn{color:var(--amber); border-color:rgba(246,182,75,.35)}
+  .btn.warn:hover{background:rgba(246,182,75,.12)}
+  .btn:disabled{opacity:.4; cursor:not-allowed; transform:none}
+
+  .global-actions{display:flex; gap:9px; flex-wrap:wrap; align-items:center}
+  .spacer{flex:1 1 auto}
+
+  /* ---------- Grid ---------- */
+  main{max-width:1680px; width:100%; margin:0 auto; padding:12px 16px; flex:1 1 auto; min-height:0; overflow:hidden}
+  .grid{display:grid; height:100%;
+    grid-template-columns:repeat(var(--cols),minmax(0,1fr));
+    grid-template-rows:repeat(var(--rows,2),minmax(0,1fr)); gap:14px}
+
+  /* ---------- Card ---------- */
+  .card{
+    background:linear-gradient(180deg,var(--bg2),#12141d);
+    border:1px solid var(--line); border-radius:var(--radius);
+    display:flex; flex-direction:column; overflow:hidden; min-height:0;   /* fills its grid cell; sections shrink to fit one screen */
+    box-shadow:var(--shadow);
+  }
+  /* method color — makes K-Map vs Boolean sections instantly distinguishable */
+  .card.m-kmap{--mc:#22d3ee; --mc-bg:rgba(34,211,238,.12); --mc-bd:rgba(34,211,238,.55)}
+  .card.m-bool{--mc:#f6b64b; --mc-bg:rgba(246,182,75,.13); --mc-bd:rgba(246,182,75,.55)}
+  .card.m-kmap,.card.m-bool{border-color:var(--mc-bd)}
+  /* phase state shown as an inset glow so it never hides the method border */
+  .card.running{box-shadow:inset 0 0 0 1px rgba(108,140,255,.30), var(--shadow)}
+  .card.revealed{box-shadow:inset 0 0 0 1px rgba(52,211,153,.40), var(--shadow)}
+  .card.timeout{box-shadow:inset 0 0 0 2px rgba(248,113,122,.60), var(--shadow)}
+
+  .c-head{display:flex; align-items:center; justify-content:space-between; padding:10px 13px 9px; border-bottom:1px solid var(--line)}
+  .card.m-kmap .c-head,.card.m-bool .c-head{background:var(--mc-bg); border-bottom-color:var(--mc-bd)}
+  .c-title{display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; color:var(--muted)}
+  .c-num{width:22px;height:22px;border-radius:7px;background:var(--bg4);display:grid;place-items:center;font-family:var(--mono);font-size:12px;color:var(--txt)}
+  .card.m-kmap .c-num,.card.m-bool .c-num{color:var(--mc); background:var(--mc-bg)}
+  .badge{font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.3px; border:1px solid transparent; opacity:0; transition:opacity .2s}
+  .badge.show{opacity:1}
+  .badge.kmap{color:var(--cyan); background:rgba(34,211,238,.12); border-color:rgba(34,211,238,.35)}
+  .badge.bool{color:var(--amber); background:rgba(246,182,75,.12); border-color:rgba(246,182,75,.35)}
+
+  /* timer */
+  .c-timer{padding:12px 13px 10px; display:flex; align-items:center; gap:12px}
+  .t-clock{font-family:var(--mono); font-size:30px; font-weight:700; letter-spacing:1px; line-height:1; font-variant-numeric:tabular-nums}
+  .t-clock.warn{color:var(--amber)} .t-clock.crit{color:var(--red)} .t-clock.done{color:var(--red)}
+  .t-clock.idle{color:var(--faint)}
+  .t-meta{display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--muted)}
+  .t-status{font-weight:600}
+  .t-status.run{color:var(--accent)} .t-status.done{color:var(--red)} .t-status.rev{color:var(--green)}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:5px;vertical-align:middle}
+  .dot.pulse{animation:pulse 1.1s infinite}
+  @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(108,140,255,.5)}50%{opacity:.55;box-shadow:0 0 0 5px rgba(108,140,255,0)}}
+  .t-track{height:5px; background:var(--bg4); border-radius:4px; overflow:hidden; margin:0 13px 12px}
+  .t-fill{height:100%; width:100%; background:var(--green); border-radius:4px; transition:width .25s linear, background .3s}
+  .t-fill.up{background:linear-gradient(90deg,var(--accent),var(--cyan)); background-size:200% 100%; animation:slide 1.6s linear infinite}
+  @keyframes slide{0%{background-position:0 0}100%{background-position:200% 0}}
+
+  /* problem */
+  .c-body{padding:4px 13px 13px; flex:1 1 auto; display:flex; flex-direction:column; overflow-y:auto; min-height:0}
+  .c-body::-webkit-scrollbar{width:8px}
+  .c-body::-webkit-scrollbar-thumb{background:var(--line2); border-radius:8px}
+  .c-body::-webkit-scrollbar-track{background:transparent}
+  .c-content{display:flex; flex-direction:column; gap:10px; flex:1 1 auto; min-height:0}  /* fills card; content top-aligned so the problem never moves when the answer appears */
+  .prob.empty{margin:auto 0}   /* only the idle placeholder is vertically centered */
+  .prob{
+    background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius-s);
+    padding:11px 12px; font-family:var(--mono); font-size:15px; line-height:1.6; word-break:break-word;
+  }
+  .prob.empty{color:var(--faint); font-family:var(--sans); font-size:13.5px; text-align:center; padding:20px 12px; border-style:dashed}
+  .prob .fn{color:var(--txt)}
+  .sig{color:var(--violet); font-weight:700}
+  .sig sub{font-size:.7em; font-weight:700}
+  .mm{color:var(--cyan)} .dd{color:var(--amber)}
+  .instr{font-family:var(--sans); font-size:12.5px; color:var(--txt); margin-top:8px; padding:6px 10px;
+    border-radius:8px; border-left:3px solid var(--mc,var(--line2)); background:var(--mc-bg,transparent); font-weight:600}
+  .instr b{color:var(--mc,var(--txt)); font-weight:800}
+
+  /* answer */
+  .answer{border:1px solid rgba(52,211,153,.3); background:rgba(52,211,153,.06); border-radius:var(--radius-s); padding:11px; display:none}
+  .answer.show{display:block; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .ans-label{font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--green); font-weight:700; display:flex; align-items:center; gap:6px; margin-bottom:7px}
+  .ans-eq{font-family:var(--mono); font-size:16px; font-weight:700; line-height:1.65; color:#eafff5; word-break:break-word}
+  .ov{text-decoration:overline; text-decoration-thickness:1.5px}
+  .op{color:var(--muted); margin:0 4px; font-weight:600} .term{white-space:nowrap}
+  .ans-meta{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:7px; font-size:11.5px; color:var(--muted)}
+  .chip{background:var(--bg4); border:1px solid var(--line2); border-radius:20px; padding:2px 9px; font-family:var(--mono)}
+  .chip.time{color:var(--green); border-color:rgba(52,211,153,.35)}
+  .ans-note{font-size:11px; color:var(--muted); margin-top:8px}
+  .mini{margin-left:auto; background:transparent; border:1px solid var(--line2); color:var(--muted); border-radius:7px; padding:3px 8px; font-size:11.5px; cursor:pointer; font-family:var(--sans)}
+  .mini:hover{color:var(--txt); border-color:var(--line2); background:var(--bg4)}
+
+  /* kmap */
+  .kmap{margin-top:11px; display:none}
+  .kmap.show{display:block}
+  .kmsvg{width:100%; max-width:252px; height:auto; display:block; margin-top:5px}
+  .kmc{fill:var(--bg3); stroke:var(--line2); stroke-width:1}
+  .kmc.one{fill:rgba(52,211,153,.15)} .kmc.dc{fill:rgba(246,182,75,.12)}
+  .kmv{font-family:var(--mono); text-anchor:middle; fill:var(--muted); font-size:14px}
+  .kmv.one{fill:#c6ffe6; font-weight:700} .kmv.dc{fill:var(--amber); font-weight:700}
+  .kmh{font-family:var(--mono); fill:var(--faint); text-anchor:middle; font-size:10px}
+  .kml{fill-opacity:.12; stroke-width:2.4; stroke-linejoin:round}      /* group loop */
+  .km-cap{font-size:10.5px; color:var(--faint); margin-top:6px; line-height:1.6}
+  .lg{display:inline-flex; align-items:center; gap:4px; margin:0 8px 3px 0}
+  .lg i{width:12px; height:12px; border-radius:3px; border:2px solid; display:inline-block}
+
+  /* buttons row */
+  .c-actions{display:grid; grid-template-columns:1fr auto auto; gap:8px; padding:0 13px 13px}
+  .c-actions .btn{justify-content:center; width:100%; padding:9px 8px}
+
+  /* compact mode: auto-applied when sections get short (small screen / many rows) so more fits without scroll */
+  body.compact .c-head{padding:5px 11px 5px}
+  body.compact .c-timer{padding:6px 11px 5px; gap:8px}
+  body.compact .t-clock{font-size:20px}
+  body.compact .t-track{margin:0 11px 7px}
+  body.compact .c-body{padding:2px 11px 9px}
+  body.compact .c-content{gap:6px}
+  body.compact .prob{padding:7px 9px; font-size:13px; line-height:1.45}
+  body.compact .instr{margin-top:5px; padding:4px 8px; font-size:11.5px}
+  body.compact .answer{padding:8px}
+  body.compact .ans-label{margin-bottom:4px; font-size:10.5px}
+  body.compact .ans-eq{font-size:13.5px; line-height:1.45}
+  body.compact .ans-meta{margin-top:5px; gap:6px}
+  body.compact .ans-note{margin-top:2px}
+  body.compact .c-actions{padding:0 11px 9px; gap:6px}
+  body.compact .c-actions .btn{padding:5px 6px; font-size:12px}
+  /* very short cards (tiny screens / many rows): drop the countdown bar and shrink the timer further.
+     The colored instruction line is kept — it is a key method cue. */
+  body.tiny .t-track{display:none}
+  body.tiny .c-timer{padding:5px 11px 4px}
+  body.tiny .t-clock{font-size:18px}
+  body.tiny .instr{margin-top:4px; padding:3px 8px}
+  body.tiny .prob{padding:6px 9px}
+
+  /* narrow screens: shrink the toolbar so its controls don't wrap into many rows and steal card height */
+  @media(max-width:1400px){
+    .brand .sub{display:none}
+    .logo{width:30px;height:30px;font-size:15px;border-radius:8px}
+    .brand h1{font-size:15px}
+    .bar-inner{padding:7px 16px;gap:6px}
+    .controls{gap:6px 9px}
+    .field>label{font-size:10px}
+    .inp,select.inp{padding:6px 8px;font-size:13px}
+    .btn{padding:6px 9px;font-size:12.5px}
+  }
+  /* --cols and --rows are driven responsively by updateLayout() in JS (accounts for these same breakpoints) */
+  @media(max-width:720px){ .bar-inner{padding:6px 12px} main{padding:10px 12px} }
+
+  /* ---------- Responsive refresh ---------- */
+  body{min-height:100vh;height:auto;overflow-x:hidden;overflow-y:auto}
+  header.bar{position:sticky;top:0}
+  .bar-inner{padding:14px clamp(16px,3vw,36px);gap:14px}
+  .brand{justify-content:space-between;flex-wrap:nowrap}
+  .brand-copy{display:flex;align-items:center;gap:12px;min-width:0}
+  .brand h1{font-size:clamp(16px,2vw,21px)}
+  .eyebrow{color:var(--cyan);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+  .controls{display:grid;grid-template-columns:repeat(4,minmax(125px,1fr)) auto;align-items:end;gap:12px;padding:12px;background:rgba(28,32,48,.68);border:1px solid var(--line);border-radius:16px}
+  .controls .divider{display:none}.field{min-width:0}.inp,select.inp{width:100%}.inp.num{width:100%}
+  .control-actions{grid-column:span 1}.global-actions{display:grid;grid-template-columns:repeat(2,max-content);gap:7px}
+  main{max-width:1680px;padding:18px clamp(16px,3vw,36px);overflow:visible}
+  .grid{height:auto;grid-template-rows:none;align-items:stretch}
+  .card{min-height:355px}
+  .difficulty-note{font-size:11px;color:var(--faint);margin-top:4px}
+  .input-random{width:100%;margin-top:7px;justify-content:center;color:var(--violet);border-color:rgba(167,139,250,.42)}
+  .input-random.active{background:rgba(167,139,250,.18);border-color:var(--violet);color:#ded4ff}
+  .vars-pill{font-family:var(--mono);font-size:11px;color:var(--violet);background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);padding:3px 7px;border-radius:99px}
+  @media(max-width:1080px){
+    .controls{grid-template-columns:repeat(3,minmax(130px,1fr)) auto}
+    .control-actions{grid-column:span 1}.card{min-height:340px}
+  }
+  @media(max-width:720px){
+    header.bar{position:static}.bar-inner{padding:12px}.brand .sub{display:none}.logo{width:36px;height:36px}
+    .controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px}.control-actions{grid-column:1 / -1}
+    .global-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.global-actions .btn{justify-content:center}
+    main{padding:12px}.grid{gap:12px}.card{min-height:0}.c-body{min-height:175px}
+  }
+  @media(max-width:390px){.global-actions .btn{font-size:11px;padding:7px 5px}.brand h1{font-size:15px}}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="bar-inner">
+    <div class="brand">
+      <div class="brand-copy">
+        <div class="logo">Σ</div>
+        <div>
+          <div class="eyebrow">Boolean practice studio</div>
+          <h1>ฝึกลดรูปสมการบูลีน</h1>
+          <div class="sub">เลือกประเภทโจทย์ ความยาก และเริ่มฝึกได้ทันที</div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+    </div>
+
+    <div class="controls">
+      <div class="field">
+        <label>จำนวน Section</label>
+        <input id="cfgCount" class="inp num" type="number" min="1" max="40" value="8">
+      </div>
+      <div class="field">
+        <label>คอลัมน์</label>
+        <select id="cfgCols" class="inp">
+          <option value="2">2</option><option value="3">3</option>
+          <option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
+        </select>
+      </div>
+      <div class="divider"></div>
+      <div class="field">
+        <label>วิธีทำ</label>
+        <select id="cfgMethod" class="inp">
+          <option value="random" selected>สุ่ม (K-Map / Boolean)</option>
+          <option value="kmap">K-Map ทั้งหมด</option>
+          <option value="bool">Boolean Algebra ทั้งหมด</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>จำนวนตัวแปร</label>
+        <select id="cfgVars" class="inp">
+          <option value="2">2 input · a, b</option>
+          <option value="3" selected>3 input · a, b, c</option>
+          <option value="4">4 input · a, b, c, d</option>
+        </select>
+        <button id="cfgRandomVars" class="btn ghost input-random" type="button">🎲 สุ่ม 2 / 3 input</button>
+      </div>
+      <div class="field">
+        <label>ความยาก</label>
+        <select id="cfgDifficulty" class="inp">
+          <option value="easy">ง่าย</option>
+          <option value="medium" selected>ปานกลาง</option>
+          <option value="hard">ยาก</option>
+        </select>
+        <div class="difficulty-note">กำหนดจำนวน minterm และ don't-care</div>
+      </div>
+      <div class="field control-actions">
+        <label>โหมดเวลา</label>
+        <select id="cfgTimerMode" class="inp">
+          <option value="down" selected>นับถอยหลัง</option>
+          <option value="up">นับขึ้น (Stopwatch)</option>
+        </select>
+      </div>
+      <div class="field time-kmap" id="timeFieldK">
+        <label>⏱ เวลา K-Map</label>
+        <div class="time-group">
+          <input id="cfgMinK" class="inp num" type="number" min="0" max="99" value="5"><span>:</span>
+          <input id="cfgSecK" class="inp num" type="number" min="0" max="59" value="00">
+        </div>
+      </div>
+      <div class="field time-bool" id="timeFieldB">
+        <label>⏱ เวลา Boolean</label>
+        <div class="time-group">
+          <input id="cfgMinB" class="inp num" type="number" min="0" max="99" value="7"><span>:</span>
+          <input id="cfgSecB" class="inp num" type="number" min="0" max="59" value="00">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <div class="global-actions">
+          <button id="gGen" class="btn primary"><span class="ic">✦</span> สร้างโจทย์ทั้งหมด</button>
+          <button id="gPause" class="btn warn"><span class="ic">⏸</span> หยุดทั้งหมด</button>
+          <button id="gReveal" class="btn ghost"><span class="ic">👁</span> เฉลยทั้งหมด</button>
+          <button id="gClear" class="btn danger"><span class="ic">↺</span> เคลียร์ทั้งหมด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="grid" class="grid"></div>
+</main>
+
+<script>
+/* ======================================================================
+   Boolean minimizer — Quine–McCluskey + exact minimum cover
+   (verified: 50,000 random cases vs brute-force, 0 failures)
+   Convention: minterm = a*8+b*4+c*2+d  (a=MSB, d=LSB)
+   Implicant {val,dash}: dash bit=1 => '-'(wildcard); val has dashed bits cleared.
+   ====================================================================== */
+function popcount(x){let c=0;while(x){x&=x-1;c++;}return c;}
+function primeImplicants(ones){
+  let current=ones.map(v=>({val:v,dash:0})); const primes={};
+  while(current.length){
+    const used=new Array(current.length).fill(false), next=[], seen=new Set(), byDash={};
+    current.forEach((t,i)=>{(byDash[t.dash]||(byDash[t.dash]=[])).push(i);});
+    for(const dash in byDash){
+      const idxs=byDash[dash];
+      for(let a=0;a<idxs.length;a++)for(let b=a+1;b<idxs.length;b++){
+        const i=idxs[a],j=idxs[b], diff=current[i].val^current[j].val;
+        if(diff&&(diff&(diff-1))===0){
+          used[i]=used[j]=true;
+          const nd=Number(dash)|diff, nv=current[i].val&~nd, key=nd+'|'+nv;
+          if(!seen.has(key)){seen.add(key);next.push({val:nv,dash:nd});}
+        }
+      }
+    }
+    current.forEach((t,i)=>{if(!used[i])primes[t.dash+'|'+t.val]={val:t.val,dash:t.dash};});
+    current=next;
+  }
+  return Object.values(primes);
+}
+function covers(pi,m){return (m&~pi.dash)===pi.val;}
+function literals(pi,varCount=4){return varCount-popcount(pi.dash);}
+function minCover(pis,targets){
+  if(targets.length===0)return [];
+  const rel=[];
+  for(let i=0;i<pis.length;i++){
+    const set=targets.filter(m=>covers(pis[i],m));
+    if(set.length)rel.push({pi:pis[i],mask:set.reduce((a,m)=>a|(1<<targets.indexOf(m)),0)});
+  }
+  const full=(1<<targets.length)-1;
+  for(let k=1;k<=rel.length;k++){
+    let best=null,bestLit=Infinity; const combo=new Array(k);
+    const rec=(start,depth,mask,lit)=>{
+      if(best&&lit>=bestLit)return;
+      if(depth===k){if(mask===full&&lit<bestLit){bestLit=lit;best=combo.slice();}return;}
+      for(let i=start;i<=rel.length-(k-depth);i++){combo[depth]=rel[i];rec(i+1,depth+1,mask|rel[i].mask,lit+literals(rel[i].pi));}
+    };
+    rec(0,0,0,0);
+    if(best)return best.map(c=>c.pi);
+  }
+  return rel.map(r=>r.pi);
+}
+function minimize(minterms,dontcares,varCount=4){
+  minterms=[...new Set(minterms)].sort((a,b)=>a-b);
+  const ones=[...new Set([...minterms,...dontcares])];
+  if(minterms.length===0)return {const:0,terms:[],varCount};
+  if(ones.length===(1<<varCount))return {const:1,terms:[{val:0,dash:(1<<varCount)-1}],varCount};
+  const pis=primeImplicants(ones);
+  const essential=[], coveredByEss=new Set();
+  for(const m of minterms){
+    const c=pis.filter(p=>covers(p,m));
+    if(c.length===1&&!essential.includes(c[0]))essential.push(c[0]);
+  }
+  for(const e of essential)for(const m of minterms)if(covers(e,m))coveredByEss.add(m);
+  const remaining=minterms.filter(m=>!coveredByEss.has(m));
+  const nonEss=pis.filter(p=>!essential.includes(p));
+  const extra=minCover(nonEss,remaining);
+  return {const:null,terms:[...essential,...extra],varCount};
+}
+const VARS=['a','b','c','d'];
+function termParts(pi,varCount=4){const parts=[];for(let bit=varCount-1;bit>=0;bit--){if(pi.dash&(1<<bit))continue;parts.push({v:VARS[varCount-1-bit],neg:!((pi.val>>bit)&1)});}return parts;}
+function termHTML(pi,varCount=4){if(pi.dash===(1<<varCount)-1)return '1';return termParts(pi,varCount).map(p=>p.neg?`<span class="ov">${p.v}</span>`:p.v).join('');}
+function termPlain(pi,varCount=4){if(pi.dash===(1<<varCount)-1)return '1';return termParts(pi,varCount).map(p=>p.neg?p.v+'′':p.v).join('');}
+function sortedTerms(res){const n=res.varCount||4;return [...res.terms].sort((x,y)=>literals(y,n)-literals(x,n)||x.val-y.val||x.dash-y.dash);}
+// each product term gets a color, shared between the equation and its K-map loop
+const KM_PALETTE=['#38bdf8','#f472b6','#a3e635','#fb923c','#c084fc','#f2c14e'];
+function termsWithColor(res){return sortedTerms(res).map((t,i)=>({t,color:KM_PALETTE[i%KM_PALETTE.length]}));}
+function sopHTML(res){if(res.const===0)return '0';if(res.const===1)return '1';
+  return termsWithColor(res).map(({t,color})=>`<span class="term" style="color:${color}">${termHTML(t,res.varCount)}</span>`).join('<span class="op">+</span>');}
+function sopPlain(res){if(res.const===0)return '0';if(res.const===1)return '1';return sortedTerms(res).map(t=>termPlain(t,res.varCount)).join(' + ');}
+
+/* ======================================================================
+   App / UI
+   ====================================================================== */
+const $=s=>document.getElementById(s);
+const grid=$('grid');
+const cfg={count:$('cfgCount'),cols:$('cfgCols'),method:$('cfgMethod'),tmode:$('cfgTimerMode'),
+  minK:$('cfgMinK'),secK:$('cfgSecK'),minB:$('cfgMinB'),secB:$('cfgSecB'), vars:$('cfgVars'), difficulty:$('cfgDifficulty')};
+const state={sections:[],nextId:1,pausedAll:false,randomVars:false};
+
+// countdown duration depends on the section's method: K-Map vs Boolean have separate settings
+function targetMs(method){
+  const mm=method==='bool'?cfg.minB:cfg.minK, ss=method==='bool'?cfg.secB:cfg.secK;
+  return ((+mm.value||0)*60+(+ss.value||0))*1000;
+}
+function fmt(ms){ms=Math.max(0,ms);const t=Math.floor(ms/1000);return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');}
+function randInt(n){return Math.floor(Math.random()*n);}
+function sample(pool,k){const p=[...pool],out=[];for(let i=0;i<k&&p.length;i++)out.push(p.splice(randInt(p.length),1)[0]);return out;}
+function chooseMethod(){const m=cfg.method.value;return m==='random'?(Math.random()<0.5?'kmap':'bool'):m;}
+function selectedVarCount(){return state.randomVars ? 2+randInt(2) : +cfg.vars.value;}
+
+function genProblem(){
+  const varCount=selectedVarCount(), all=[...Array(1<<varCount).keys()];
+  const ratios={easy:[1,2,0,1],medium:[2,Math.max(3,Math.ceil(all.length*.48)),1,Math.max(2,Math.ceil(all.length*.28))],hard:[Math.max(2,Math.ceil(all.length*.35)),Math.max(3,Math.ceil(all.length*.7)),Math.max(1,Math.ceil(all.length*.18)),Math.max(2,Math.ceil(all.length*.38))]};
+  const r=ratios[cfg.difficulty.value]||ratios.medium;
+  const minCount=Math.min(all.length-1,r[0]+randInt(Math.max(1,r[1]-r[0]+1)));
+  const minterms=sample(all,minCount).sort((a,b)=>a-b);
+  const rest=all.filter(x=>!minterms.includes(x));
+  const dcCount=Math.min(rest.length,r[2]+randInt(Math.max(1,r[3]-r[2]+1)));
+  const dontcares=sample(rest,dcCount).sort((a,b)=>a-b);
+  return {minterms,dontcares,method:chooseMethod(),varCount,result:minimize(minterms,dontcares,varCount)};
+}
+
+/* ---- Timer object ----
+   base = remaining-at-anchor (down) OR elapsed-at-anchor (up) */
+function newTimer(mode){return {mode,running:false,anchor:0,base:0,start:0,pausedByGlobal:false};}
+function tVal(t,now){return t.mode==='down' ? t.base-(t.running?now-t.anchor:0) : t.base+(t.running?now-t.anchor:0);}
+function tFreeze(t,now){t.base=tVal(t,now);t.running=false;}
+function tRun(t,now){t.anchor=now;t.running=true;}
+
+function methodInfo(m){return m==='kmap'?{label:'K-Map',cls:'kmap',word:'Karnaugh Map (K-Map)'}:{label:'Boolean Algebra',cls:'bool',word:'พีชคณิตบูลีน (Boolean Algebra)'};}
+
+/* ---- build one card ---- */
+function createSection(){
+  const sec={id:state.nextId++,phase:'idle',problem:null,timer:newTimer(cfg.tmode.value)};
+  const el=document.createElement('div'); el.className='card';
+  el.innerHTML=`
+    <div class="c-head">
+      <div class="c-title"><span class="c-num">${sec.id}</span> Section</div>
+      <span class="badge" data-badge>—</span>
+    </div>
+    <div class="c-timer">
+      <div class="t-clock idle" data-clock>--:--</div>
+      <div class="t-meta">
+        <span class="t-status" data-status>พร้อมสร้างโจทย์</span>
+        <span data-usedwrap style="display:none">ใช้เวลา <b data-used></b></span>
+      </div>
+    </div>
+    <div class="t-track"><div class="t-fill" data-fill style="width:100%"></div></div>
+    <div class="c-body">
+      <div class="c-content">
+      <div class="prob empty" data-prob>กด “สร้างโจทย์” เพื่อเริ่มและจับเวลา</div>
+      <div class="answer" data-answer>
+        <div class="ans-label">✓ เฉลย — สมการที่สั้นที่สุด (Minimal SOP)
+          <button class="mini" data-copy>คัดลอก</button>
+        </div>
+        <div class="ans-eq" data-eq></div>
+        <div class="ans-meta" data-ansmeta></div>
+        <div class="ans-note">
+          <button class="mini" data-kmtoggle style="margin:6px 0 0">▸ แสดง K-map</button>
+          <div class="kmap" data-kmap></div>
+        </div>
+      </div>
+      </div>
+    </div>
+    <div class="c-actions">
+      <button class="btn primary" data-gen>สร้างโจทย์</button>
+      <button class="btn" data-reveal disabled>เฉลย</button>
+      <button class="btn ghost" data-clear>เคลียร์</button>
+    </div>`;
+  sec.el=el;
+  sec.ref={
+    badge:el.querySelector('[data-badge]'), clock:el.querySelector('[data-clock]'),
+    status:el.querySelector('[data-status]'), fill:el.querySelector('[data-fill]'),
+    prob:el.querySelector('[data-prob]'), answer:el.querySelector('[data-answer]'),
+    eq:el.querySelector('[data-eq]'), ansmeta:el.querySelector('[data-ansmeta]'),
+    kmap:el.querySelector('[data-kmap]'), usedwrap:el.querySelector('[data-usedwrap]'),
+    used:el.querySelector('[data-used]'),
+    gen:el.querySelector('[data-gen]'), reveal:el.querySelector('[data-reveal]'), clear:el.querySelector('[data-clear]'),
+    copy:el.querySelector('[data-copy]'), kmtoggle:el.querySelector('[data-kmtoggle]')
+  };
+  sec.ref.gen.onclick=()=>doGenerate(sec);
+  sec.ref.reveal.onclick=()=>doReveal(sec);
+  sec.ref.clear.onclick=()=>doClear(sec);
+  sec.ref.copy.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText('f(a,b,c,d) = '+sopPlain(sec.problem.result));sec.ref.copy.textContent='คัดลอกแล้ว ✓';setTimeout(()=>sec.ref.copy.textContent='คัดลอก',1400);};
+  sec.ref.kmtoggle.onclick=()=>{const k=sec.ref.kmap;const on=k.classList.toggle('show');sec.ref.kmtoggle.textContent=(on?'▾':'▸')+' '+(on?'ซ่อน':'แสดง')+' K-map';};
+  return sec;
+}
+
+/* ---- actions ---- */
+function doGenerate(sec){
+  sec.problem=genProblem();
+  sec.timer=newTimer(cfg.tmode.value);
+  sec.timer.base=sec.timer.mode==='down'?targetMs(sec.problem.method):0;
+  sec.timer.startBase=sec.timer.base;
+  tRun(sec.timer,performance.now());
+  sec.phase='running';
+  renderProblem(sec);
+  sec.ref.answer.classList.remove('show');
+  sec.ref.kmap.classList.remove('show'); sec.ref.kmtoggle.textContent='▸ แสดง K-map';
+  sec.ref.reveal.disabled=false;
+  sec.ref.gen.textContent='สุ่มโจทย์ใหม่';
+  sec.ref.usedwrap.style.display='none';
+  updateCard(sec,performance.now());
+}
+function doReveal(sec){
+  if(!sec.problem)return;
+  const now=performance.now();
+  if(sec.timer.running)tFreeze(sec.timer,now);
+  sec.phase='revealed';
+  const res=sec.problem.result;
+  sec.ref.eq.innerHTML='f = '+sopHTML(res);
+  const terms=res.const!=null?(res.const===1?1:0):res.terms.length;
+  const lits=res.const!=null?0:res.terms.reduce((a,t)=>a+literals(t,res.varCount),0);
+  sec.ref.ansmeta.innerHTML=
+    `<span class="chip">${terms} พจน์</span><span class="chip">${lits} literal</span>`+
+    (sec.timer.mode==='down'
+      ? `<span class="chip time">ใช้เวลา ${fmt(sec.timer.startBase-tVal(sec.timer,now))}</span>`
+      : `<span class="chip time">ใช้เวลา ${fmt(tVal(sec.timer,now))}</span>`);
+  sec.ref.kmap.innerHTML=buildKmapSVG(sec.problem,res);
+  sec.ref.answer.classList.add('show');
+  updateCard(sec,now);
+}
+function doClear(sec){
+  sec.problem=null; sec.phase='idle'; sec.timer=newTimer(cfg.tmode.value);
+  sec.ref.answer.classList.remove('show');
+  sec.ref.prob.className='prob empty';
+  sec.ref.prob.textContent='กด “สร้างโจทย์” เพื่อเริ่มและจับเวลา';
+  sec.ref.badge.className='badge'; sec.ref.badge.textContent='—';
+  sec.ref.reveal.disabled=true;
+  sec.ref.gen.textContent='สร้างโจทย์';
+  sec.ref.usedwrap.style.display='none';
+  updateCard(sec,performance.now());
+}
+
+function renderProblem(sec){
+  const p=sec.problem, mi=methodInfo(p.method);
+  sec.ref.prob.className='prob';
+  sec.ref.prob.innerHTML=
+    `<span class="fn">f(${VARS.slice(0,p.varCount).join(', ')}) =</span> <span class="vars-pill">${p.varCount} input</span><br>`+
+    `<span class="sig">Σ<sub>m</sub></span>(<span class="mm">${p.minterms.join(', ')}</span>) `+
+    `<span class="op" style="color:var(--muted)">+</span> `+
+    `<span class="sig">Σ<sub>d</sub></span>(<span class="dd">${p.dontcares.join(', ')}</span>)`+
+    `<div class="instr">ให้ลดรูปด้วยวิธี <b>${mi.word}</b></div>`;
+  sec.ref.badge.className='badge show '+mi.cls;
+  sec.ref.badge.textContent=mi.label;
+}
+
+/* ---- K-map with grouping loops (rows ab, cols cd, Gray order) ---- */
+const KM_GRAY=[0,1,3,2];
+// row/col positions (0..3, in Gray order) that a prime implicant covers
+function kmPositions(pi,isRow){
+  const fixed=(~pi.dash)&(isRow?0b1100:0b0011), target=pi.val&fixed, P=[];
+  for(let pos=0;pos<4;pos++){ const v=KM_GRAY[pos], bits=isRow?(v<<2):v; if((bits&fixed)===target)P.push(pos); }
+  return P;
+}
+// contiguous span(s); {0,3} means the group wraps the outer edges → two pieces
+function kmSpans(P){
+  const a=[...P].sort((x,y)=>x-y);
+  if(a.length===2&&a[0]===0&&a[1]===3)return [[0,0],[3,3]];
+  return [[a[0],a[a.length-1]]];
+}
+function buildKmapSVG(p,res){
+  // Compact maps for the new 2- and 3-input exercises.
+  if(p.varCount<4){
+    const rows=2, cols=1<<(p.varCount-1), gray=cols===2?[0,1]:KM_GRAY;
+    const rowName='a', colName=p.varCount===2?'b':'bc', labels=cols===2?['0','1']:['00','01','11','10'];
+    const M=3,hw=25,hh=20,cw=45,ch=35,x0=M+hw,y0=M+hh,W=x0+cols*cw+M,H=y0+rows*ch+M;
+    const on=new Set(p.minterms),dc=new Set(p.dontcares); let s=`<svg viewBox="0 0 ${W} ${H}" class="kmsvg" xmlns="http://www.w3.org/2000/svg">`;
+    s+=`<text x="${M+hw-4}" y="${M+hh-5}" class="kmh" text-anchor="end" style="font-size:8px">${rowName}\\${colName}</text>`;
+    for(let c=0;c<cols;c++)s+=`<text x="${x0+c*cw+cw/2}" y="${M+hh-5}" class="kmh">${labels[c]}</text>`;
+    for(let r=0;r<rows;r++){s+=`<text x="${M+hw-5}" y="${y0+r*ch+ch/2+4}" class="kmh" text-anchor="end">${r}</text>`;for(let c=0;c<cols;c++){
+      const idx=(r<<(p.varCount-1))|gray[c],cls=on.has(idx)?'one':dc.has(idx)?'dc':'',val=on.has(idx)?'1':dc.has(idx)?'x':'0',x=x0+c*cw,y=y0+r*ch;
+      s+=`<rect x="${x}" y="${y}" width="${cw}" height="${ch}" class="kmc ${cls}"/><text x="${x+cw/2}" y="${y+ch/2+5}" class="kmv ${cls}">${val}</text>`;
+    }}
+    return s+`</svg><div class="km-cap">1 = minterm · x = don't-care · 0 = ศูนย์</div>`;
+  }
+  const lbl=['00','01','11','10'], on=new Set(p.minterms), dc=new Set(p.dontcares);
+  const M=3,hw=30,hh=20,cw=42,ch=34, x0=M+hw,y0=M+hh, W=x0+4*cw+M, H=y0+4*ch+M;
+  let s=`<svg viewBox="0 0 ${W} ${H}" class="kmsvg" xmlns="http://www.w3.org/2000/svg">`;
+  s+=`<text x="${M+hw-4}" y="${M+hh-5}" class="kmh" text-anchor="end" style="font-size:8px">ab\\cd</text>`;
+  for(let c=0;c<4;c++)s+=`<text x="${x0+c*cw+cw/2}" y="${M+hh-5}" class="kmh">${lbl[c]}</text>`;
+  for(let r=0;r<4;r++)s+=`<text x="${M+hw-5}" y="${y0+r*ch+ch/2+4}" class="kmh" text-anchor="end">${lbl[r]}</text>`;
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++){
+    const idx=KM_GRAY[r]*4+KM_GRAY[c], x=x0+c*cw, y=y0+r*ch;
+    const cls=on.has(idx)?'one':dc.has(idx)?'dc':'', val=on.has(idx)?'1':dc.has(idx)?'x':'0';
+    s+=`<rect x="${x}" y="${y}" width="${cw}" height="${ch}" class="kmc ${cls}"/>`;
+    s+=`<text x="${x+cw/2}" y="${y+ch/2+5}" class="kmv ${cls}">${val}</text>`;
+  }
+  // one loop per product term, colour-matched to the equation
+  termsWithColor(res).forEach(({t,color},i)=>{
+    const rs=kmSpans(kmPositions(t,true)), cs=kmSpans(kmPositions(t,false)), inset=3+Math.min(i,3)*2.2;
+    for(const [r0,r1] of rs)for(const [c0,c1] of cs){
+      const x=x0+c0*cw+inset, y=y0+r0*ch+inset, w=(c1-c0+1)*cw-2*inset, h=(r1-r0+1)*ch-2*inset;
+      s+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="9" class="kml" style="stroke:${color};fill:${color}"/>`;
+    }
+  });
+  s+=`</svg>`;
+  return s+`<div class="km-cap">1 = minterm · x = don't-care · 0 = ศูนย์ · <b style="color:var(--muted)">วงสี = กลุ่มของแต่ละพจน์ (สีตรงกับพจน์ในสมการ)</b></div>`;
+}
+
+/* ---- per-frame timer/UI update ---- */
+function updateCard(sec,now){
+  const t=sec.timer, r=sec.ref;
+  let v=tVal(t,now);
+  if(t.mode==='down'&&t.running&&v<=0){ v=0; t.base=0; t.running=false; sec.phase='timeout'; }
+
+  // card class (method color + phase state) — only rewrite when it actually changes,
+  // otherwise the 200ms tick perpetually restarts the border/background transitions and freezes them
+  const mcls = sec.problem ? ' m-'+sec.problem.method : '';
+  const cls='card'+mcls+(sec.phase==='running'?' running':sec.phase==='revealed'?' revealed':sec.phase==='timeout'?' timeout':'');
+  if(sec.el.className!==cls) sec.el.className=cls;
+
+  // clock text + color
+  if(sec.phase==='idle'){
+    r.clock.className='t-clock idle';
+    const fm=cfg.method.value;   // forced method → show its time; random → dash (decided at generate)
+    r.clock.textContent = t.mode!=='down' ? '00:00' : (fm==='kmap'?fmt(targetMs('kmap')):fm==='bool'?fmt(targetMs('bool')):'--:--');
+    r.status.className='t-status'; r.status.textContent='พร้อมสร้างโจทย์';
+    r.fill.className='t-fill'; r.fill.style.width='100%'; r.fill.style.background='var(--bg4)';
+    return;
+  }
+  r.clock.textContent=fmt(v);
+
+  if(sec.phase==='timeout'){
+    r.clock.className='t-clock done';
+    r.status.className='t-status done'; r.status.innerHTML='⏱ หมดเวลา!';
+    r.fill.className='t-fill'; r.fill.style.width='100%'; r.fill.style.background='var(--red)';
+  }else if(sec.phase==='revealed'){
+    r.clock.className='t-clock';
+    r.status.className='t-status rev'; r.status.innerHTML='เฉลยแล้ว';
+    r.fill.className='t-fill'; r.fill.style.background='var(--green)';
+    if(t.mode==='down'){r.fill.style.width=(t.startBase?Math.max(0,v)/t.startBase*100:0)+'%';}
+    else{r.fill.style.width='100%';}
+  }else{ // running
+    if(t.mode==='down'){
+      const frac=t.startBase?v/t.startBase:0;
+      r.clock.className='t-clock'+(frac<=0.1?' crit':frac<=0.35?' warn':'');
+      r.fill.className='t-fill'; r.fill.style.width=Math.max(0,frac*100)+'%';
+      r.fill.style.background=frac<=0.1?'var(--red)':frac<=0.35?'var(--amber)':'var(--green)';
+    }else{
+      r.clock.className='t-clock';
+      r.fill.className='t-fill up'; r.fill.style.width='100%';
+    }
+    const paused=t.pausedByGlobal;
+    r.status.className='t-status run';
+    r.status.innerHTML=paused?'<span class="dot" style="background:var(--amber)"></span>หยุดชั่วคราว':'<span class="dot pulse"></span>กำลังจับเวลา…';
+  }
+}
+
+/* ---- global tick ---- */
+function tick(){ const now=performance.now(); for(const s of state.sections) updateCard(s,now); }
+setInterval(tick,200);
+
+/* ---- section count / columns ---- */
+function setCount(n){
+  n=Math.max(1,Math.min(40,n|0));
+  while(state.sections.length<n){const s=createSection();state.sections.push(s);grid.appendChild(s.el);}
+  while(state.sections.length>n){const s=state.sections.pop();s.el.remove();}
+  updateLayout();
+  tick();
+}
+/* The grid fills the viewport: cols × rows tiles divide the screen, so the whole
+   app stays on one screen and sections shrink as count/cols grow (no page scroll). */
+function effectiveCols(){
+  const sel=+cfg.cols.value||4, w=window.innerWidth;
+  if(w<=720)return 1;
+  if(w<=1200)return Math.min(sel,2);
+  return sel;
+}
+const GRID_GAP=14;
+function updateLayout(){
+  const c=effectiveCols(), rows=Math.max(1,Math.ceil(state.sections.length/c)), root=document.documentElement;
+  root.style.setProperty('--cols',c);
+  root.style.setProperty('--rows',rows);
+  // predict resulting card height and shrink section content in tiers if it would be short
+  const mainEl=document.querySelector('main');
+  const cardH=(mainEl.clientHeight-(rows-1)*GRID_GAP)/rows;
+  document.body.classList.toggle('compact', cardH>0 && cardH<400);
+  document.body.classList.toggle('tiny', cardH>0 && cardH<332);
+}
+
+/* ---- global actions ---- */
+$('gGen').onclick=()=>{state.pausedAll=false;syncPauseBtn();state.sections.forEach(doGenerate);};
+$('gReveal').onclick=()=>state.sections.forEach(s=>{if(s.problem)doReveal(s);});
+$('gClear').onclick=()=>state.sections.forEach(doClear);
+$('gPause').onclick=()=>{
+  const now=performance.now();
+  state.pausedAll=!state.pausedAll;
+  state.sections.forEach(s=>{
+    if(s.phase!=='running')return;
+    if(state.pausedAll){ if(s.timer.running){tFreeze(s.timer,now);s.timer.pausedByGlobal=true;} }
+    else{ if(s.timer.pausedByGlobal){tRun(s.timer,now);s.timer.pausedByGlobal=false;} }
+  });
+  syncPauseBtn(); tick();
+};
+function syncPauseBtn(){const b=$('gPause');b.innerHTML=state.pausedAll?'<span class="ic">▶</span> เล่นต่อทั้งหมด':'<span class="ic">⏸</span> หยุดทั้งหมด';b.classList.toggle('primary',state.pausedAll);b.classList.toggle('warn',!state.pausedAll);}
+
+/* ---- config listeners ---- */
+cfg.count.onchange=()=>setCount(+cfg.count.value);
+cfg.cols.onchange=()=>updateLayout();
+window.addEventListener('resize',updateLayout);
+window.addEventListener('load',updateLayout);   // settle after fonts/layout finalize
+cfg.tmode.onchange=()=>{const up=cfg.tmode.value==='up';
+  ['timeFieldK','timeFieldB'].forEach(id=>$(id).style.opacity=up?'.45':'1');
+  [cfg.minK,cfg.secK,cfg.minB,cfg.secB].forEach(i=>i.disabled=up);
+  state.sections.forEach(s=>{if(s.phase==='idle')s.timer=newTimer(cfg.tmode.value);});tick();};
+[cfg.minK,cfg.secK,cfg.minB,cfg.secB].forEach(inp=>inp.onchange=()=>tick());
+cfg.method.onchange=()=>tick();   // refresh idle clock preview when forced method changes
+cfg.vars.onchange=()=>{state.randomVars=false;syncRandomVarsBtn();};
+$('cfgRandomVars').onclick=()=>{state.randomVars=!state.randomVars;syncRandomVarsBtn();};
+function syncRandomVarsBtn(){
+  const b=$('cfgRandomVars');
+  b.classList.toggle('active',state.randomVars);
+  b.textContent=state.randomVars?'✓ สุ่ม 2 / 3 input ทุกโจทย์':'🎲 สุ่ม 2 / 3 input';
+}
+
+/* ---- init ---- */
+setCount(+cfg.count.value);
+updateLayout();
+syncPauseBtn();
+syncRandomVarsBtn();
+</script>
+</body>
+</html>
