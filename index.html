@@ -316,6 +316,11 @@
   .streak-toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-25px);background:linear-gradient(135deg,#ea580c,#f59e0b);color:#fff;padding:10px 20px;border-radius:30px;font-weight:700;font-size:14.5px;box-shadow:0 8px 24px rgba(234,88,12,.5);z-index:9999;pointer-events:none;opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:8px}
   .streak-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
+  .badge.kmap{color:var(--cyan);background:rgba(34,211,238,.12);border-color:rgba(34,211,238,.32)}
+  .badge.pos{color:#c084fc;background:rgba(192,132,252,.12);border-color:rgba(192,132,252,.32)}
+  .km-ival.zero{fill:#c084fc;font-weight:900}
+  .km-icell.zero{fill:rgba(192,132,252,.06)}
+
   /* ---------- Responsive refresh ---------- */
   body{min-height:100vh;height:auto;overflow-x:hidden;overflow-y:auto}
   header.bar{position:sticky;top:0}
@@ -324,7 +329,7 @@
   .brand-copy{display:flex;align-items:center;gap:12px;min-width:0}
   .brand h1{font-size:clamp(16px,2vw,21px)}
   .eyebrow{color:var(--cyan);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-  .controls{display:grid;grid-template-columns:repeat(8,minmax(105px,1fr)) auto;align-items:end;gap:10px;padding:12px;background:rgba(28,32,48,.68);border:1px solid var(--line);border-radius:16px}
+  .controls{display:grid;grid-template-columns:repeat(9,minmax(95px,1fr)) auto;align-items:end;gap:9px;padding:12px;background:rgba(28,32,48,.68);border:1px solid var(--line);border-radius:16px}
   .controls .divider{display:none}.field{min-width:0}.inp,select.inp{width:100%}.inp.num{width:100%}
   .control-actions{grid-column:span 1}.global-actions{display:grid;grid-template-columns:repeat(2,max-content);gap:7px}
   main{max-width:1680px;padding:18px clamp(16px,3vw,36px);overflow:visible}
@@ -332,9 +337,12 @@
   .card{min-height:355px}
   .difficulty-note{font-size:11px;color:var(--faint);margin-top:4px}
   .vars-pill{font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.3);padding:3px 7px;border-radius:99px}
-  @media(max-width:1300px){
-    .controls{grid-template-columns:repeat(4,minmax(120px,1fr)) auto}
+  @media(max-width:1400px){
+    .controls{grid-template-columns:repeat(5,minmax(110px,1fr)) auto}
     .control-actions{grid-column:span 1}.card{min-height:340px}
+  }
+  @media(max-width:1100px){
+    .controls{grid-template-columns:repeat(3,minmax(110px,1fr)) auto}
   }
   @media(max-width:720px){
     header.bar{position:static}.bar-inner{padding:12px}.brand{flex-wrap:wrap;gap:10px}.brand .sub{display:none}.logo{width:36px;height:36px}
@@ -402,6 +410,14 @@
           <option value="2">2 input · a, b</option>
           <option value="3" selected>3 input · a, b, c</option>
           <option value="4">4 input · a, b, c, d</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>โหมดสมการ</label>
+        <select id="cfgLogicMode" class="inp">
+          <option value="random">🎲 สุ่ม (Minterm / Maxterm)</option>
+          <option value="sop" selected>Σ Minterm (SOP: วง 1)</option>
+          <option value="pos">Π Maxterm (POS: วง 0)</option>
         </select>
       </div>
       <div class="field">
@@ -487,6 +503,11 @@ function primeImplicants(ones){
     current.forEach((t,i)=>{if(!used[i])primes[t.dash+'|'+t.val]={val:t.val,dash:t.dash};});
     current=next;
   }
+  /* Safety: if no primes were found but the input was non-empty, the all-dash PI covers everything */
+  if(Object.keys(primes).length===0 && ones.length>0){
+    /* This shouldn't happen with correct QM, but guard against it */
+    console.warn('[primeImplicants] no primes found — re-deriving');
+  }
   return Object.values(primes);
 }
 function covers(pi,m){return (m&~pi.dash)===pi.val;}
@@ -532,13 +553,37 @@ const VARS=['a','b','c','d'];
 function termParts(pi,varCount=4){const parts=[];for(let bit=varCount-1;bit>=0;bit--){if(pi.dash&(1<<bit))continue;parts.push({v:VARS[varCount-1-bit],neg:!((pi.val>>bit)&1)});}return parts;}
 function termHTML(pi,varCount=4){if(pi.dash===(1<<varCount)-1)return '1';return termParts(pi,varCount).map(p=>p.neg?`<span class="ov">${p.v}</span>`:p.v).join('');}
 function termPlain(pi,varCount=4){if(pi.dash===(1<<varCount)-1)return '1';return termParts(pi,varCount).map(p=>p.neg?p.v+'′':p.v).join('');}
+
+function maxtermParts(pi,varCount=4){const parts=[];for(let bit=varCount-1;bit>=0;bit--){if(pi.dash&(1<<bit))continue;parts.push({v:VARS[varCount-1-bit],neg:Boolean((pi.val>>bit)&1)});}return parts;}
+function maxtermHTML(pi,varCount=4){if(pi.dash===(1<<varCount)-1)return '0';const parts=maxtermParts(pi,varCount);const inner=parts.map(p=>p.neg?`<span class="ov">${p.v}</span>`:p.v).join('<span class="op">+</span>');return `(${inner})`;}
+function maxtermPlain(pi,varCount=4){if(pi.dash===(1<<varCount)-1)return '0';const parts=maxtermParts(pi,varCount);const inner=parts.map(p=>p.neg?p.v+'′':p.v).join('+');return `(${inner})`;}
+
+function singleTermHTML(pi,varCount=4,mode='sop'){return mode==='pos'?maxtermHTML(pi,varCount):termHTML(pi,varCount);}
+function singleTermPlain(pi,varCount=4,mode='sop'){return mode==='pos'?maxtermPlain(pi,varCount):termPlain(pi,varCount);}
+
 function sortedTerms(res){const n=res.varCount||4;return [...res.terms].sort((x,y)=>literals(y,n)-literals(x,n)||x.val-y.val||x.dash-y.dash);}
-// each product term gets a color, shared between the equation and its K-map loop
+// each product/sum term gets a color, shared between the equation and its K-map loop
 const KM_PALETTE=['#38bdf8','#f472b6','#a3e635','#fb923c','#c084fc','#f2c14e'];
 function termsWithColor(res){return sortedTerms(res).map((t,i)=>({t,color:KM_PALETTE[i%KM_PALETTE.length]}));}
-function sopHTML(res){if(res.const===0)return '0';if(res.const===1)return '1';
-  return termsWithColor(res).map(({t,color})=>`<span class="term" style="color:${color}">${termHTML(t,res.varCount)}</span>`).join('<span class="op">+</span>');}
-function sopPlain(res){if(res.const===0)return '0';if(res.const===1)return '1';return sortedTerms(res).map(t=>termPlain(t,res.varCount)).join(' + ');}
+
+function exprHTML(res,mode='sop'){
+  /* For POS: minimize was called on maxterms → const:0 means "no 0-cells" → f=1;
+     const:1 means "all cells are 0 or dc" → f=0. Invert display for POS. */
+  if(res.const===0) return mode==='pos'?'1':'0';
+  if(res.const===1) return mode==='pos'?'0':'1';
+  if(mode==='pos'){
+    return termsWithColor(res).map(({t,color})=>`<span class="term" style="color:${color}">${maxtermHTML(t,res.varCount)}</span>`).join('<span class="op">·</span>');
+  }
+  return termsWithColor(res).map(({t,color})=>`<span class="term" style="color:${color}">${termHTML(t,res.varCount)}</span>`).join('<span class="op">+</span>');
+}
+function exprPlain(res,mode='sop'){
+  if(res.const===0) return mode==='pos'?'1':'0';
+  if(res.const===1) return mode==='pos'?'0':'1';
+  if(mode==='pos') return sortedTerms(res).map(t=>maxtermPlain(t,res.varCount)).join(' · ');
+  return sortedTerms(res).map(t=>termPlain(t,res.varCount)).join(' + ');
+}
+function sopHTML(res){return exprHTML(res,'sop');}
+function sopPlain(res){return exprPlain(res,'sop');}
 
 /* ======================================================================
    App / UI
@@ -546,8 +591,8 @@ function sopPlain(res){if(res.const===0)return '0';if(res.const===1)return '1';r
 const $=s=>document.getElementById(s);
 const grid=$('grid');
 const cfg={count:$('cfgCount'),cols:$('cfgCols'),tmode:$('cfgTimerMode'),
-  minK:$('cfgMinK'),secK:$('cfgSecK'), vars:$('cfgVars'), plotMode:$('cfgPlotMode'),
-  playMode:$('cfgPlayMode'), difficulty:$('cfgDifficulty')};
+  minK:$('cfgMinK'),secK:$('cfgSecK'), vars:$('cfgVars'), logicMode:$('cfgLogicMode'),
+  plotMode:$('cfgPlotMode'), playMode:$('cfgPlayMode'), difficulty:$('cfgDifficulty')};
 const state={sections:[],nextId:1,pausedAll:false};
 
 /* ======================================================================
@@ -629,12 +674,34 @@ function genProblem(){
   const varCount=selectedVarCount(), all=[...Array(1<<varCount).keys()];
   const ratios={easy:[1,2,0,1],medium:[2,Math.max(3,Math.ceil(all.length*.48)),1,Math.max(2,Math.ceil(all.length*.28))],hard:[Math.max(2,Math.ceil(all.length*.35)),Math.max(3,Math.ceil(all.length*.7)),Math.max(1,Math.ceil(all.length*.18)),Math.max(2,Math.ceil(all.length*.38))]};
   const r=ratios[cfg.difficulty.value]||ratios.medium;
-  const minCount=Math.min(all.length-1,r[0]+randInt(Math.max(1,r[1]-r[0]+1)));
-  const minterms=sample(all,minCount).sort((a,b)=>a-b);
-  const rest=all.filter(x=>!minterms.includes(x));
+  const activeCount=Math.min(all.length-1,r[0]+randInt(Math.max(1,r[1]-r[0]+1)));
+  const actives=sample(all,activeCount).sort((a,b)=>a-b);
+  const rest=all.filter(x=>!actives.includes(x));
   const dcCount=Math.min(rest.length,r[2]+randInt(Math.max(1,r[3]-r[2]+1)));
   const dontcares=sample(rest,dcCount).sort((a,b)=>a-b);
-  return {minterms,dontcares,method:'kmap',varCount,result:minimize(minterms,dontcares,varCount)};
+
+  const chosenMode = (cfg.logicMode && cfg.logicMode.value) ? cfg.logicMode.value : 'sop';
+  const mode = chosenMode === 'random' ? (Math.random() < 0.5 ? 'sop' : 'pos') : chosenMode;
+  let minterms, maxterms;
+  if(mode==='pos'){
+    maxterms = actives;
+    minterms = all.filter(x=>!maxterms.includes(x)&&!dontcares.includes(x));
+  } else {
+    minterms = actives;
+    maxterms = all.filter(x=>!minterms.includes(x)&&!dontcares.includes(x));
+  }
+
+  const result = minimize(actives, dontcares, varCount);
+  return {
+    mode,
+    actives,
+    minterms,
+    maxterms,
+    dontcares,
+    method:'kmap',
+    varCount,
+    result
+  };
 }
 
 /* ---- Timer object ----
@@ -726,7 +793,7 @@ function createSection(){
   sec.ref.gen.onclick=()=>doGenerate(sec);
   sec.ref.reveal.onclick=()=>doReveal(sec);
   sec.ref.clear.onclick=()=>doClear(sec);
-  sec.ref.copy.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText('f(a,b,c,d) = '+sopPlain(sec.problem.result));sec.ref.copy.textContent='คัดลอกแล้ว ✓';setTimeout(()=>sec.ref.copy.textContent='คัดลอก',1400);};
+  sec.ref.copy.onclick=()=>{if(!sec.problem)return;const vars=VARS.slice(0,sec.problem.varCount).join(',');const txt='f('+vars+') = '+exprPlain(sec.problem.result,sec.problem.mode);navigator.clipboard&&navigator.clipboard.writeText(txt);sec.ref.copy.textContent='คัดลอกแล้ว ✓';setTimeout(()=>sec.ref.copy.textContent='คัดลอก',1400);};
   sec.ref.kmtoggle.onclick=()=>{const k=sec.ref.kmap;const on=k.classList.toggle('show');sec.ref.kmtoggle.textContent=(on?'▾':'▸')+' '+(on?'ซ่อน':'แสดง')+' K-map';};
   sec.ref.check.onclick=()=>doCheckAnswer(sec);
   sec.ref.checkplot.onclick=()=>doCheckPlotting(sec);
@@ -763,39 +830,44 @@ function doReveal(sec){
   if(sec.timer.running)tFreeze(sec.timer,now);
   sec.phase='revealed';
   const res=sec.problem.result;
+  const isPos=sec.problem.mode==='pos';
   // If user has drawn groups in K-Map game, evaluate them before revealing
   if(sec.game&&sec.game.groups.length>0){
-    const {minterms,dontcares,varCount}=sec.problem;
-    const on=new Set(minterms),dc=new Set(dontcares);
+    const {varCount}=sec.problem;
+    const targetActives = isPos ? sec.problem.maxterms : sec.problem.minterms;
+    const targetForbidden = isPos ? sec.problem.minterms : sec.problem.maxterms;
+    const forbiddenSet = new Set(targetForbidden);
+    const actSet = new Set(targetActives);
+
     let hasInvalid=false;
     for(const g of sec.game.groups){
       for(const idx of g.cells){
-        if(!on.has(idx)&&!dc.has(idx)){hasInvalid=true;break;}
+        if(forbiddenSet.has(idx)){hasInvalid=true;break;}
       }
       if(hasInvalid) break;
     }
     const covered=new Set();
     for(const g of sec.game.groups) for(const idx of g.cells){
-      if(on.has(idx))covered.add(idx);
+      if(actSet.has(idx))covered.add(idx);
     }
-    const uncov=minterms.filter(m=>!covered.has(m));
+    const uncov=targetActives.filter(m=>!covered.has(m));
     const userPIs=sec.game.groups.map(g=>g.pi);
     const userLits=userPIs.reduce((a,pi)=>a+literals(pi,varCount),0),userN=userPIs.length;
     const optLits=res.const!=null?0:res.terms.reduce((a,t)=>a+literals(t,varCount),0);
     const optN=res.const!=null?(res.const?1:0):res.terms.length;
     const isOpt=!hasInvalid&&uncov.length===0&&userN<=optN&&userLits<=optLits;
     const timeUsed=sec.timer.mode==='down'?fmt(sec.timer.startBase-tVal(sec.timer,now)):fmt(tVal(sec.timer,now));
-    const userSOP=userPIs.map((pi,i)=>`<span style="color:${sec.game.groups[i].color}">${termHTML(pi,varCount)}</span>`).join('<span class="op">+</span>');
+    const userExpr=userPIs.map((pi,i)=>`<span style="color:${sec.game.groups[i].color}">${singleTermHTML(pi,varCount,sec.problem.mode)}</span>`).join(isPos?'<span class="op">·</span>':'<span class="op">+</span>');
     let msg,detail;
     if(hasInvalid){
       if(!sec.streakRewarded) onStreakBreak('reveal');
-      msg='❌ ไม่ถูกต้อง — มีกลุ่มที่ครอบคลุม cell ที่เป็น 0';
-      detail=`คำตอบของคุณ: f = ${userSOP}<br><span class="chip time">ใช้เวลา ${timeUsed}</span>`;
+      msg=isPos?'❌ ไม่ถูกต้อง — มีกลุ่มที่ครอบคลุม cell ที่เป็น 1':'❌ ไม่ถูกต้อง — มีกลุ่มที่ครอบคลุม cell ที่เป็น 0';
+      detail=`คำตอบของคุณ: f = ${userExpr}<br><span class="chip time">ใช้เวลา ${timeUsed}</span>`;
       showCheckResult(sec,'wrong',msg,detail);
     }else if(uncov.length>0){
       if(!sec.streakRewarded) onStreakBreak('reveal');
-      msg=`⚠️ ไม่ถูกต้อง — ยังไม่ครบ (ขาดอีก ${uncov.length} minterm)`;
-      detail=`คำตอบของคุณ: f = ${userSOP} (${userN} พจน์, ${userLits} lit)<br><span class="chip time">ใช้เวลา ${timeUsed}</span>`;
+      msg=`⚠️ ไม่ถูกต้อง — ยังไม่ครบ (ขาดอีก ${uncov.length} ${isPos?'maxterm (0)':'minterm (1)'})`;
+      detail=`คำตอบของคุณ: f = ${userExpr} (${userN} พจน์, ${userLits} lit)<br><span class="chip time">ใช้เวลา ${timeUsed}</span>`;
       showCheckResult(sec,'partial',msg,detail);
     }else if(isOpt){
       const isFirst = !sec.streakRewarded;
@@ -803,29 +875,20 @@ function doReveal(sec){
         sec.streakRewarded = true;
         onProblemSolved(sec);
       }
-      msg='🎉 ถูกต้อง 100%! ลดรูปสั้นที่สุด (Optimal Minimal SOP)';
-      detail=`f = ${userSOP}<br><span class="chip time">ใช้เวลา ${timeUsed}</span> · <span class="chip">${userN} พจน์</span> · <span class="chip">${userLits} literal</span>`+
+      msg=`🎉 ถูกต้อง 100%! ลดรูปสั้นที่สุด (Optimal Minimal ${isPos?'POS':'SOP'})`;
+      detail=`f = ${userExpr}<br><span class="chip time">ใช้เวลา ${timeUsed}</span> · <span class="chip">${userN} พจน์</span> · <span class="chip">${userLits} literal</span>`+
         (isFirst ? ` · <span class="chip" style="background:rgba(251,146,60,.18);color:#fdba74;border:1px solid rgba(251,146,60,.4)">🔥 Streak ${streakStats.current}</span>` : '');
       showCheckResult(sec,'correct',msg,detail);
     }else{
       if(!sec.streakRewarded) onStreakBreak('reveal');
       msg='⚠️ ยังไม่ถูกต้อง — ยังลดรูปไม่สั้นที่สุด!';
-      detail=`คำตอบของคุณ: f = ${userSOP} (<b>${userN}</b> พจน์, <b>${userLits}</b> literal)<br>เฉลยที่สั้นที่สุด: f = ${sopHTML(res)} (<b>${optN}</b> พจน์, <b>${optLits}</b> literal)<br><span class="chip time">ใช้เวลา ${timeUsed}</span>`;
+      detail=`คำตอบของคุณ: f = ${userExpr} (<b>${userN}</b> พจน์, <b>${userLits}</b> literal)<br>เฉลยที่สั้นที่สุด: f = ${exprHTML(res,sec.problem.mode)} (<b>${optN}</b> พจน์, <b>${optLits}</b> literal)<br><span class="chip time">ใช้เวลา ${timeUsed}</span>`;
       showCheckResult(sec,'partial',msg,detail);
     }
   } else {
     if(!sec.streakRewarded) onStreakBreak('reveal');
   }
-  sec.ref.eq.innerHTML='f = '+sopHTML(res);
-  const terms=res.const!=null?(res.const===1?1:0):res.terms.length;
-  const lits=res.const!=null?0:res.terms.reduce((a,t)=>a+literals(t,res.varCount),0);
-  sec.ref.ansmeta.innerHTML=
-    `<span class="chip">${terms} พจน์</span><span class="chip">${lits} literal</span>`+
-    (sec.timer.mode==='down'
-      ? `<span class="chip time">ใช้เวลา ${fmt(sec.timer.startBase-tVal(sec.timer,now))}</span>`
-      : `<span class="chip time">ใช้เวลา ${fmt(tVal(sec.timer,now))}</span>`);
-  sec.ref.kmap.innerHTML=buildKmapSVG(sec.problem,res);
-  sec.ref.answer.classList.add('show');
+  revealSolutionBox(sec);
   updateCard(sec,now);
 }
 function doClear(sec){
@@ -843,17 +906,20 @@ function doClear(sec){
 
 function renderProblem(sec){
   const p=sec.problem;
-  const mmHtml=p.minterms.map(m=>`<span class="plot-chip" data-plot-m="${m}">${m}</span>`).join(', ');
-  const ddHtml=p.dontcares.length?p.dontcares.map(d=>`<span class="plot-chip" data-plot-d="${d}">${d}</span>`).join(', '):'ไม่มี';
+  const isPos = p.mode === 'pos';
+  const list = isPos ? p.maxterms : p.minterms;
+  const mmHtml=list.map(m=>`<span class="plot-chip" data-plot-m="${m}">${m}</span>`).join(', ');
+  const ddHtml=p.dontcares.length?p.dontcares.map(d=>`<span class="plot-chip" data-plot-d="${d}">${d}</span>`):null;
+  const ddText=ddHtml?` <span class="op" style="color:var(--muted)">${isPos?'·':'+'}</span> <span class="sig">${isPos?'Π<sub>D</sub>':'Σ<sub>d</sub>'}</span>(<span class="dd">${ddHtml.join(', ')}</span>)`:'';
+
   sec.ref.prob.className='prob';
   sec.ref.prob.innerHTML=
     `<span class="fn">f(${VARS.slice(0,p.varCount).join(', ')}) =</span> <span class="vars-pill">${p.varCount} input</span><br>`+
-    `<span class="sig">Σ<sub>m</sub></span>(<span class="mm">${mmHtml}</span>) `+
-    `<span class="op" style="color:var(--muted)">+</span> `+
-    `<span class="sig">Σ<sub>d</sub></span>(<span class="dd">${ddHtml}</span>)`+
-    `<div class="instr">วงกลุ่มลดรูปสมการด้วย <b>Karnaugh Map (K-Map)</b></div>`;
-  sec.ref.badge.className='badge show kmap';
-  sec.ref.badge.textContent='K-Map';
+    `<span class="sig">${isPos?'Π<sub>M</sub>':'Σ<sub>m</sub>'}</span>(<span class="mm">${mmHtml}</span>)`+
+    ddText+
+    `<div class="instr">${isPos?'วงกลุ่มเลข <b>0</b> (และ x) เพื่อลดรูปสมการ <b>Product of Sums (POS)</b>':'วงกลุ่มเลข <b>1</b> (และ x) เพื่อลดรูปสมการ <b>Sum of Products (SOP)</b>'}</div>`;
+  sec.ref.badge.className='badge show '+(isPos?'pos':'kmap');
+  sec.ref.badge.textContent=isPos?'Π Maxterm (POS)':'Σ Minterm (SOP)';
 }
 
 /* ---- K-map with grouping loops (rows ab, cols cd, Gray order) ---- */
@@ -871,41 +937,62 @@ function kmSpans(P){
   return [[a[0],a[a.length-1]]];
 }
 function buildKmapSVG(p,res){
-  // Compact maps for the new 2- and 3-input exercises.
-  if(p.varCount<4){
-    const rows=2, cols=1<<(p.varCount-1), gray=cols===2?[0,1]:KM_GRAY;
-    const rowName='a', colName=p.varCount===2?'b':'bc', labels=cols===2?['0','1']:['00','01','11','10'];
-    const M=3,hw=25,hh=20,cw=45,ch=35,x0=M+hw,y0=M+hh,W=x0+cols*cw+M,H=y0+rows*ch+M;
-    const on=new Set(p.minterms),dc=new Set(p.dontcares); let s=`<svg viewBox="0 0 ${W} ${H}" class="kmsvg" xmlns="http://www.w3.org/2000/svg">`;
-    s+=`<text x="${M+hw-4}" y="${M+hh-5}" class="kmh" text-anchor="end" style="font-size:8px">${rowName}\\${colName}</text>`;
-    for(let c=0;c<cols;c++)s+=`<text x="${x0+c*cw+cw/2}" y="${M+hh-5}" class="kmh">${labels[c]}</text>`;
-    for(let r=0;r<rows;r++){s+=`<text x="${M+hw-5}" y="${y0+r*ch+ch/2+4}" class="kmh" text-anchor="end">${r}</text>`;for(let c=0;c<cols;c++){
-      const idx=(r<<(p.varCount-1))|gray[c],cls=on.has(idx)?'one':dc.has(idx)?'dc':'',val=on.has(idx)?'1':dc.has(idx)?'x':'0',x=x0+c*cw,y=y0+r*ch;
-      s+=`<rect x="${x}" y="${y}" width="${cw}" height="${ch}" class="kmc ${cls}"/><text x="${x+cw/2}" y="${y+ch/2+5}" class="kmv ${cls}">${val}</text>`;
-    }}
-    return s+`</svg><div class="km-cap">1 = minterm · x = don't-care · 0 = ศูนย์</div>`;
+  const vc = p.varCount;
+  const isPos = p.mode === 'pos';
+  const gi = kmGI(vc);
+  const on = new Set(p.minterms), dc = new Set(p.dontcares);
+  const M = 4, hw = 30, hh = 20, cw = 44, ch = 34;
+  const x0 = M + hw, y0 = M + hh, W = x0 + gi.cols * cw + M, H = y0 + gi.rows * ch + M;
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="kmsvg" xmlns="http://www.w3.org/2000/svg">`;
+  s += `<text x="${M+hw-4}" y="${M+hh-5}" class="kmh" text-anchor="end" style="font-size:8.5px">${gi.rl}\\${gi.cl}</text>`;
+  for(let c=0; c<gi.cols; c++) s += `<text x="${x0+c*cw+cw/2}" y="${M+hh-5}" class="kmh">${gi.cls[c]}</text>`;
+  for(let r=0; r<gi.rows; r++) s += `<text x="${M+hw-5}" y="${y0+r*ch+ch/2+4}" class="kmh" text-anchor="end">${gi.rls[r]}</text>`;
+  
+  for(let r=0; r<gi.rows; r++){
+    for(let c=0; c<gi.cols; c++){
+      const idx = grayIndex(r, c, vc);
+      const isOn = on.has(idx), isDc = dc.has(idx);
+      let cls = '', val = '0';
+      if(isPos){
+        const isZero = !isOn && !isDc;
+        cls = isZero ? 'zero' : isDc ? 'dc' : '';
+        val = isZero ? '0' : isDc ? 'x' : '1';
+      } else {
+        cls = isOn ? 'one' : isDc ? 'dc' : '';
+        val = isOn ? '1' : isDc ? 'x' : '0';
+      }
+      const x = x0 + c * cw, y = y0 + r * ch;
+      s += `<rect x="${x}" y="${y}" width="${cw}" height="${ch}" class="kmc ${cls}"/>`;
+      s += `<text x="${x+cw/2}" y="${y+ch/2+5}" class="kmv ${cls}">${val}</text>`;
+    }
   }
-  const lbl=['00','01','11','10'], on=new Set(p.minterms), dc=new Set(p.dontcares);
-  const M=3,hw=30,hh=20,cw=42,ch=34, x0=M+hw,y0=M+hh, W=x0+4*cw+M, H=y0+4*ch+M;
-  let s=`<svg viewBox="0 0 ${W} ${H}" class="kmsvg" xmlns="http://www.w3.org/2000/svg">`;
-  s+=`<text x="${M+hw-4}" y="${M+hh-5}" class="kmh" text-anchor="end" style="font-size:8px">ab\\cd</text>`;
-  for(let c=0;c<4;c++)s+=`<text x="${x0+c*cw+cw/2}" y="${M+hh-5}" class="kmh">${lbl[c]}</text>`;
-  for(let r=0;r<4;r++)s+=`<text x="${M+hw-5}" y="${y0+r*ch+ch/2+4}" class="kmh" text-anchor="end">${lbl[r]}</text>`;
-  for(let r=0;r<4;r++)for(let c=0;c<4;c++){
-    const idx=KM_GRAY[r]*4+KM_GRAY[c], x=x0+c*cw, y=y0+r*ch;
-    const cls=on.has(idx)?'one':dc.has(idx)?'dc':'', val=on.has(idx)?'1':dc.has(idx)?'x':'0';
-    s+=`<rect x="${x}" y="${y}" width="${cw}" height="${ch}" class="kmc ${cls}"/>`;
-    s+=`<text x="${x+cw/2}" y="${y+ch/2+5}" class="kmv ${cls}">${val}</text>`;
-  }
-  termsWithColor(res).forEach(({t,color},i)=>{
-    const rs=kmSpans(kmPositions(t,true)), cs=kmSpans(kmPositions(t,false)), inset=3+Math.min(i,3)*2.2;
-    for(const [r0,r1] of rs)for(const [c0,c1] of cs){
-      const x=x0+c0*cw+inset, y=y0+r0*ch+inset, w=(c1-c0+1)*cw-2*inset, h=(r1-r0+1)*ch-2*inset;
-      s+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="9" class="kml" style="stroke:${color};fill:${color}"/>`;
+
+  // Draw loops for terms
+  termsWithColor(res).forEach(({t, color}, i) => {
+    const coveredCells = [];
+    const total = 1 << vc;
+    for(let idx=0; idx<total; idx++){
+      if(covers(t, idx)) coveredCells.push(idx);
+    }
+    const valGrp = validateCellGroup(coveredCells, vc);
+    if(valGrp){
+      const rs = kmSpans(valGrp.rows), cs = kmSpans(valGrp.cols);
+      const inset = 3 + Math.min(i, 3) * 2.2;
+      for(const [r0, r1] of rs){
+        for(const [c0, c1] of cs){
+          const x = x0 + c0 * cw + inset, y = y0 + r0 * ch + inset;
+          const w = (c1 - c0 + 1) * cw - 2 * inset, h = (r1 - r0 + 1) * ch - 2 * inset;
+          s += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="8" class="kml" style="stroke:${color};fill:${color}"/>`;
+        }
+      }
     }
   });
-  s+=`</svg>`;
-  return s+`<div class="km-cap">1 = minterm · x = don't-care · 0 = ศูนย์ · <b style="color:var(--muted)">วงสี = กลุ่มของแต่ละพจน์ (สีตรงกับพจน์ในสมการ)</b></div>`;
+
+  s += `</svg>`;
+  const cap = isPos
+    ? `0 = maxterm · x = don't-care · 1 = หนึ่ง · <b style="color:var(--muted)">วงสี = กลุ่มของแต่ละพจน์บวก (สีตรงกับพจน์ในสมการ)</b>`
+    : `1 = minterm · x = don't-care · 0 = ศูนย์ · <b style="color:var(--muted)">วงสี = กลุ่มของแต่ละพจน์คูณ (สีตรงกับพจน์ในสมการ)</b>`;
+  return s + `<div class="km-cap">${cap}</div>`;
 }
 
 /* ======================================================================
@@ -984,7 +1071,8 @@ function validateCellGroup(cellArray, vc){
 }
 
 function buildGameKmap(prob, sec){
-  const {minterms,dontcares,varCount}=prob;
+  const {minterms,dontcares,varCount,mode}=prob;
+  const isPos = mode === 'pos';
   const isPlotting = sec && sec.plotState === 'plotting';
   const gi=kmGI(varCount),on=new Set(minterms),dc=new Set(dontcares);
   const M=4,hw=35,hh=24,cw=56,ch=50;
@@ -998,22 +1086,28 @@ function buildGameKmap(prob, sec){
       const idx=grayIndex(r,c,varCount);
       let cls='', val='0';
       if(isPlotting){
-        val = (sec.userCells && sec.userCells.get(idx)) || '0';
-        cls = (val==='1'?'one':val==='x'?'dc':'') + ' km-cell-plot';
+        val = (sec.userCells && sec.userCells.get(idx)) || (isPos ? '1' : '0');
+        cls = (val==='1'?'one':val==='x'?'dc':isPos?'zero':'') + ' km-cell-plot';
       } else {
         const isOn=on.has(idx), isDc=dc.has(idx);
-        cls = isOn?'one':isDc?'dc':'';
-        val = isOn?'1':isDc?'x':'0';
+        if(isPos){
+          const isZero = !isOn && !isDc;
+          cls = isZero ? 'zero' : isDc ? 'dc' : '';
+          val = isZero ? '0' : isDc ? 'x' : '1';
+        } else {
+          cls = isOn ? 'one' : isDc ? 'dc' : '';
+          val = isOn ? '1' : isDc ? 'x' : '0';
+        }
       }
       s+=`<rect x="${x0+c*cw}" y="${y0+r*ch}" width="${cw}" height="${ch}" class="km-icell ${cls}" data-r="${r}" data-c="${c}" data-idx="${idx}"/>`;
-      s+=`<text x="${x0+c*cw+4}" y="${y0+r*ch+10}" class="km-midx">m${idx}</text>`;
+      s+=`<text x="${x0+c*cw+4}" y="${y0+r*ch+10}" class="km-midx">${isPos?'M':'m'}${idx}</text>`;
       s+=`<text x="${x0+c*cw+cw/2}" y="${y0+r*ch+ch/2+7}" class="km-ival ${cls}">${val}</text>`;
     }
   }
   s+=`<g class="km-preview-layer"></g><g class="km-groups-layer"></g></svg>`;
   const footHint = isPlotting
-    ? `💡 <b>โหมดลงตาราง:</b> คลิกที่ช่องเพื่อใส่ 1 หรือ x จากโจทย์ แล้วกด "✓ ตรวจการลงตาราง"`
-    : `💡 ลากหรือคลิกช่องเพื่อวงกลุ่ม · <b>คลิกช่องขอบตรงข้ามเพื่อวงข้าม</b>`;
+    ? `💡 <b>โหมดลงตาราง:</b> คลิกช่องเพื่อใส่ ${isPos?'0 หรือ x':'1 หรือ x'} จากโจทย์ แล้วกด "✓ ตรวจการลงตาราง"`
+    : `💡 ลากหรือคลิกช่องเพื่อวงกลุ่ม ${isPos?'<b>0</b>':'<b>1</b>'} · <b>คลิกช่องขอบตรงข้ามเพื่อวงข้าม</b>`;
   s+=`<div style="text-align:center;margin-top:5px;font-size:11px;color:var(--faint)">${footHint}</div>`;
   return {html:s,x0,y0,cw,ch,gi};
 }
@@ -1051,7 +1145,7 @@ function renderGameGroups(sec){
     const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
     lbl.setAttribute('x',px+pw/2); lbl.setAttribute('y',py+ph/2+4);
     lbl.classList.add('km-group-label');
-    lbl.textContent=termPlain(g.pi,sec.problem.varCount);
+    lbl.textContent=singleTermPlain(g.pi,sec.problem.varCount,sec.problem.mode);
     grp.appendChild(lbl);
 
     const dx=px+pw-2, dy=py+8;
@@ -1117,8 +1211,10 @@ function updateSelectionUI(sec){
     return;
   }
   bar.style.display='flex';
-  const {minterms,dontcares,varCount}=sec.problem;
-  const on=new Set(minterms), dc=new Set(dontcares);
+  const {varCount}=sec.problem;
+  const isPos=sec.problem.mode==='pos';
+  const targetForbidden=isPos?sec.problem.minterms:sec.problem.maxterms;
+  const forbiddenSet=new Set(targetForbidden);
   const validDef=validateCellGroup([...sec.game.selectedCells], varCount);
 
   if(!validDef){
@@ -1127,21 +1223,22 @@ function updateSelectionUI(sec){
     hint.innerHTML=`เลือกแล้ว ${count} ช่อง (ต้องเป็นกลุ่มขนาด 1, 2, 4, 8)`;
     return;
   }
-  let coversZero=false;
+  let coversForbidden=false;
   for(const idx of validDef.cells){
-    if(!on.has(idx)&&!dc.has(idx)){coversZero=true;break;}
+    if(forbiddenSet.has(idx)){coversForbidden=true;break;}
   }
-  if(coversZero){
+  if(coversForbidden){
     btn.disabled=true;
     btn.textContent='＋ วงกลุ่มนี้';
-    hint.innerHTML='<span style="color:var(--red)">⚠️ มีช่องที่เป็น 0 — ห้ามวงรวม</span>';
+    hint.innerHTML=`<span style="color:var(--red)">⚠️ มีช่องที่เป็น ${isPos?'1':'0'} — ห้ามวงรวม</span>`;
     return;
   }
   btn.disabled=false;
   const wrapTag=validDef.wrapType==='corner'?' ⛶ วง 4 มุม':
                 validDef.wrapType==='wrap-col'?' ↔ วงข้ามซ้าย-ขวา':
                 validDef.wrapType==='wrap-row'?' ↕ วงข้ามบน-ล่าง':'';
-  btn.innerHTML=`＋ วงกลุ่มนี้ (${count} ช่อง · ${termPlain(validDef.pi, varCount)})${wrapTag}`;
+  const termName=singleTermPlain(validDef.pi, varCount, sec.problem.mode);
+  btn.innerHTML=`＋ วงกลุ่มนี้ (${count} ช่อง · ${termName})${wrapTag}`;
   hint.innerHTML='<span style="color:var(--green)">✓ รูปแบบถูกต้อง! กดปุ่มหรือกด Enter</span>';
 }
 
@@ -1153,11 +1250,12 @@ function clearSelection(sec){
 }
 
 function addGroupDef(sec, groupDef){
-  const {minterms,dontcares}=sec.problem;
-  const on=new Set(minterms), dc=new Set(dontcares);
+  const isPos=sec.problem.mode==='pos';
+  const targetForbidden=isPos?sec.problem.minterms:sec.problem.maxterms;
+  const forbiddenSet=new Set(targetForbidden);
   for(const idx of groupDef.cells){
-    if(!on.has(idx)&&!dc.has(idx)){
-      showGameMsg(sec,'กลุ่มนี้ครอบคลุม 0 — ลองใหม่!','wrong');
+    if(forbiddenSet.has(idx)){
+      showGameMsg(sec,`กลุ่มนี้ครอบคลุม ${isPos?'1':'0'} — ลองใหม่!`,'wrong');
       return false;
     }
   }
@@ -1368,21 +1466,31 @@ function initGameInteraction(sec){
 
 function cycleCellPlot(sec, idx){
   if(sec.plotState!=='plotting') return;
-  const cur=sec.userCells.get(idx)||'0';
-  const nxt=cur==='0'?'1':cur==='1'?'x':'0';
-  sec.userCells.set(idx,nxt);
+  const isPos = sec.problem && sec.problem.mode === 'pos';
+  const cur = sec.userCells.get(idx) || (isPos ? '1' : '0');
+  let nxt = '0';
+  if(isPos){
+    // In POS: default 1 -> 0 -> x -> 1
+    nxt = cur==='1' ? '0' : cur==='0' ? 'x' : '1';
+  } else {
+    // In SOP: default 0 -> 1 -> x -> 0
+    nxt = cur==='0' ? '1' : cur==='1' ? 'x' : '0';
+  }
+  sec.userCells.set(idx, nxt);
 
   const svg=sec.el.querySelector('.kmap-game-svg');
   if(svg){
     const rect=svg.querySelector(`.km-icell[data-idx="${idx}"]`);
     if(rect){
-      rect.classList.remove('one','dc','km-plot-err');
+      rect.classList.remove('one','dc','zero','km-plot-err');
       if(nxt==='1') rect.classList.add('one');
       else if(nxt==='x') rect.classList.add('dc');
+      else if(isPos && nxt==='0') rect.classList.add('zero');
+
       const valEl=rect.nextElementSibling ? rect.nextElementSibling.nextElementSibling : null;
       if(valEl && valEl.classList.contains('km-ival')){
         valEl.textContent=nxt;
-        valEl.className='km-ival'+(nxt==='1'?' one':nxt==='x'?' dc':'');
+        valEl.className='km-ival'+(nxt==='1'?' one':nxt==='x'?' dc':isPos && nxt==='0'?' zero':'');
       }
     }
   }
@@ -1390,12 +1498,15 @@ function cycleCellPlot(sec, idx){
 }
 
 function updatePlotMatchedChips(sec){
+  if(!sec.problem) return;
+  const isPos = sec.problem.mode === 'pos';
+  const targetVal = isPos ? '0' : '1';
   const chips=sec.ref.prob.querySelectorAll('.plot-chip');
   chips.forEach(chip=>{
     const m=chip.dataset.plotM, d=chip.dataset.plotD;
     if(m!=null){
       const val=sec.userCells.get(+m);
-      chip.classList.toggle('matched', val==='1');
+      chip.classList.toggle('matched', val===targetVal);
     } else if(d!=null){
       const val=sec.userCells.get(+d);
       chip.classList.toggle('matched', val==='x');
@@ -1405,14 +1516,22 @@ function updatePlotMatchedChips(sec){
 
 function doCheckPlotting(sec){
   if(!sec.problem || sec.plotState!=='plotting') return;
-  const {minterms,dontcares,varCount}=sec.problem;
+  const {varCount, mode, dontcares}=sec.problem;
+  const isPos = mode === 'pos';
+  const actives = isPos ? sec.problem.maxterms : sec.problem.minterms;
+  const targetActiveVal = isPos ? '0' : '1';
+  const targetRestVal = isPos ? '1' : '0';
   const total=1<<varCount;
-  const on=new Set(minterms), dc=new Set(dontcares);
+  const dcSet = new Set(dontcares);
+  const actSet = new Set(actives);
   const errors=[];
 
   for(let i=0;i<total;i++){
-    const userVal=sec.userCells.get(i)||'0';
-    const expVal=on.has(i)?'1':dc.has(i)?'x':'0';
+    const userVal=sec.userCells.get(i) || targetRestVal;
+    let expVal = targetRestVal;
+    if(actSet.has(i)) expVal = targetActiveVal;
+    else if(dcSet.has(i)) expVal = 'x';
+
     if(userVal!==expVal){
       errors.push({idx:i, userVal, expVal});
     }
@@ -1443,11 +1562,20 @@ function doCheckPlotting(sec){
 
 function doAutoFillPlot(sec){
   if(!sec.problem) return;
-  const {minterms,dontcares,varCount}=sec.problem;
+  const {varCount, mode, dontcares}=sec.problem;
+  const isPos = mode === 'pos';
+  const actives = isPos ? sec.problem.maxterms : sec.problem.minterms;
+  const targetActiveVal = isPos ? '0' : '1';
+  const targetRestVal = isPos ? '1' : '0';
   const total=1<<varCount;
-  const on=new Set(minterms), dc=new Set(dontcares);
+  const dcSet = new Set(dontcares);
+  const actSet = new Set(actives);
+
   for(let i=0;i<total;i++){
-    sec.userCells.set(i, on.has(i)?'1':dc.has(i)?'x':'0');
+    let val = targetRestVal;
+    if(actSet.has(i)) val = targetActiveVal;
+    else if(dcSet.has(i)) val = 'x';
+    sec.userCells.set(i, val);
   }
   updatePlotMatchedChips(sec);
   unlockGroupingPhase(sec);
@@ -1476,8 +1604,12 @@ function doCheckAnswer(sec){
     return;
   }
   const isHardcore = (cfg.playMode && cfg.playMode.value==='hardcore');
-  const {minterms,dontcares,varCount}=sec.problem;
-  const on=new Set(minterms), dc=new Set(dontcares);
+  const {varCount, mode}=sec.problem;
+  const isPos = mode === 'pos';
+  const targetActives = isPos ? sec.problem.maxterms : sec.problem.minterms;
+  const targetForbidden = isPos ? sec.problem.minterms : sec.problem.maxterms;
+  const forbiddenSet = new Set(targetForbidden);
+  const actSet = new Set(targetActives);
   const now=performance.now();
 
   const userPIs=sec.game.groups.map(g=>g.pi);
@@ -1486,31 +1618,37 @@ function doCheckAnswer(sec){
   const optLits=opt.const!=null?0:opt.terms.reduce((a,t)=>a+literals(t,varCount),0);
   const optN=opt.const!=null?(opt.const?1:0):opt.terms.length;
   const timeUsed=sec.timer.mode==='down'?fmt(sec.timer.startBase-tVal(sec.timer,now)):fmt(tVal(sec.timer,now));
-  const userSOP=userPIs.map((pi,i)=>`<span style="color:${sec.game.groups[i].color}">${termHTML(pi,varCount)}</span>`).join('<span class="op">+</span>');
+  const userExpr=userPIs.map((pi,i)=>`<span style="color:${sec.game.groups[i].color}">${singleTermHTML(pi,varCount,mode)}</span>`).join(isPos?'<span class="op">·</span>':'<span class="op">+</span>');
 
-  // 1. Check if any group covers 0
+  // 1. Check if any group covers forbidden cells (0 in SOP, 1 in POS)
   for(const g of sec.game.groups){
     for(const idx of g.cells){
-      if(!on.has(idx)&&!dc.has(idx)){
+      if(forbiddenSet.has(idx)){
+        const errTitle = isPos
+          ? '❌ มีกลุ่มที่ครอบคลุม cell ที่เป็น 1 (โหมด POS วงได้เฉพาะ 0 และ x)'
+          : '❌ มีกลุ่มที่ครอบคลุม cell ที่เป็น 0 (โหมด SOP วงได้เฉพาะ 1 และ x)';
         if(isHardcore){
-          finishHardcoreFail(sec, now, userSOP, userN, userLits, opt, optN, optLits, timeUsed, '❌ ผิดพลาด (Hardcore) — มีกลุ่มที่ครอบคลุม cell ที่เป็น 0');
+          finishHardcoreFail(sec, now, userExpr, userN, userLits, opt, optN, optLits, timeUsed, errTitle);
           return;
         }
-        showCheckResult(sec,'wrong','❌ มีกลุ่มที่ครอบคลุม cell ที่เป็น 0');
+        showCheckResult(sec,'wrong',errTitle);
         return;
       }
     }
   }
 
-  // 2. Check for uncovered minterms
+  // 2. Check for uncovered active terms
   const covered=new Set();
   for(const g of sec.game.groups) for(const idx of g.cells){
-    if(on.has(idx)) covered.add(idx);
+    if(actSet.has(idx)) covered.add(idx);
   }
-  const uncov=minterms.filter(m=>!covered.has(m));
+  const uncov=targetActives.filter(m=>!covered.has(m));
   if(uncov.length){
+    const errTitle = isPos
+      ? `❌ ผิดพลาด — วงไม่ครบ ขาดอีก ${uncov.length} maxterm (0)`
+      : `❌ ผิดพลาด — วงไม่ครบ ขาดอีก ${uncov.length} minterm (1)`;
     if(isHardcore){
-      finishHardcoreFail(sec, now, userSOP, userN, userLits, opt, optN, optLits, timeUsed, `❌ ผิดพลาด (Hardcore) — วงไม่ครบ ขาดอีก ${uncov.length} minterm`);
+      finishHardcoreFail(sec, now, userExpr, userN, userLits, opt, optN, optLits, timeUsed, errTitle);
       return;
     }
     const svg=sec.el.querySelector('.kmap-game-svg');
@@ -1523,7 +1661,7 @@ function doCheckAnswer(sec){
         }
       });
     }
-    showCheckResult(sec,'partial',`⚠️ ยังมี ${uncov.length} minterm ที่ยังไม่ครอบคลุม`);
+    showCheckResult(sec,'partial',`⚠️ ยังมี ${uncov.length} ${isPos?'maxterm (0)':'minterm (1)'} ที่ยังไม่ครอบคลุม`);
     return;
   }
 
@@ -1531,10 +1669,10 @@ function doCheckAnswer(sec){
   const isOpt=userN<=optN&&userLits<=optLits;
   if(!isOpt){
     if(isHardcore){
-      finishHardcoreFail(sec, now, userSOP, userN, userLits, opt, optN, optLits, timeUsed, '❌ ผิดพลาด (Hardcore) — ยังลดรูปไม่สั้นที่สุด!');
+      finishHardcoreFail(sec, now, userExpr, userN, userLits, opt, optN, optLits, timeUsed, '❌ ผิดพลาด (Hardcore) — ยังลดรูปไม่สั้นที่สุด!');
       return;
     }
-    const detail=`คำตอบของคุณ: f = ${userSOP} (<b>${userN}</b> พจน์, <b>${userLits}</b> literal)<br>`+
+    const detail=`คำตอบของคุณ: f = ${userExpr} (<b>${userN}</b> พจน์, <b>${userLits}</b> literal)<br>`+
       `เป้าหมายสั้นที่สุด: <b>${optN}</b> พจน์, <b>${optLits}</b> literal <span style="color:var(--amber)">(ลองรวมกลุ่มให้ใหญ่ขึ้น หรือตัดกลุ่มที่ซ้ำซ้อน)</span>`;
     showCheckResult(sec,'partial','⚠️ ยังไม่ถูกต้อง — ยังลดรูปไม่สั้นที่สุด!',detail);
     return;
@@ -1549,19 +1687,19 @@ function doCheckAnswer(sec){
     onProblemSolved(sec);
   }
   const hardTag = isHardcore ? ' · <span class="chip" style="background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.4)">💀 Hardcore Clear</span>' : '';
-  const detail=`f = ${userSOP}<br><span class="chip time">ใช้เวลา ${timeUsed}</span> · <span class="chip">${userN} พจน์</span> · <span class="chip">${userLits} literal</span>`+
+  const detail=`f = ${userExpr}<br><span class="chip time">ใช้เวลา ${timeUsed}</span> · <span class="chip">${userN} พจน์</span> · <span class="chip">${userLits} literal</span>`+
     (isFirstReward ? ` · <span class="chip" style="background:rgba(251,146,60,.18);color:#fdba74;border:1px solid rgba(251,146,60,.4)">🔥 Streak ${streakStats.current}</span>` : '') + hardTag;
-  showCheckResult(sec,'correct','🎉 ถูกต้อง 100%! ลดรูปสั้นที่สุด (Optimal Minimal SOP)',detail);
+  showCheckResult(sec,'correct',`🎉 ถูกต้อง 100%! ลดรูปสั้นที่สุด (Optimal Minimal ${isPos?'POS':'SOP'})`,detail);
   revealSolutionBox(sec);
   updateCard(sec,now);
 }
 
-function finishHardcoreFail(sec, now, userSOP, userN, userLits, opt, optN, optLits, timeUsed, titleMsg){
+function finishHardcoreFail(sec, now, userExpr, userN, userLits, opt, optN, optLits, timeUsed, titleMsg){
   if(sec.timer.running) tFreeze(sec.timer,now);
   sec.phase='revealed';
   if(!sec.streakRewarded) onStreakBreak('hardcore_fail');
-  const detail=`คำตอบของคุณ: f = ${userSOP} (<b>${userN}</b> พจน์, <b>${userLits}</b> literal)<br>`+
-    `เฉลยที่สั้นที่สุด: f = ${sopHTML(opt)} (<b>${optN}</b> พจน์, <b>${optLits}</b> literal)<br>`+
+  const detail=`คำตอบของคุณ: f = ${userExpr} (<b>${userN}</b> พจน์, <b>${userLits}</b> literal)<br>`+
+    `เฉลยที่สั้นที่สุด: f = ${exprHTML(opt, sec.problem.mode)} (<b>${optN}</b> พจน์, <b>${optLits}</b> literal)<br>`+
     `<span class="chip time">ใช้เวลา ${timeUsed}</span> · <span class="chip" style="background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.4)">💀 Hardcore Fail</span>`;
   showCheckResult(sec,'wrong',titleMsg,detail);
   revealSolutionBox(sec);
@@ -1571,11 +1709,23 @@ function finishHardcoreFail(sec, now, userSOP, userN, userLits, opt, optN, optLi
 function revealSolutionBox(sec){
   if(!sec.problem) return;
   const res=sec.problem.result;
-  sec.ref.eq.innerHTML='f = '+sopHTML(res);
+  const isPos = sec.problem.mode === 'pos';
+  sec.ref.eq.innerHTML='f = '+exprHTML(res, sec.problem.mode);
   const terms=res.const!=null?(res.const===1?1:0):res.terms.length;
   const lits=res.const!=null?0:res.terms.reduce((a,t)=>a+literals(t,res.varCount),0);
-  sec.ref.ansmeta.innerHTML=`<span class="chip">${terms} พจน์</span><span class="chip">${lits} literal</span>`;
+  sec.ref.ansmeta.innerHTML=`<span class="chip">${terms} ${isPos?'พจน์บวก (Sum)':'พจน์คูณ (Product)'}</span><span class="chip">${lits} literal</span>`;
   sec.ref.kmap.innerHTML=buildKmapSVG(sec.problem,res);
+  const ansLabel = sec.ref.answer.querySelector('.ans-label');
+  if(ansLabel){
+    ansLabel.innerHTML = `✓ เฉลย — สมการที่สั้นที่สุด (Minimal ${isPos?'POS':'SOP'}) <button class="mini" data-copy>คัดลอก</button>`;
+    const cpBtn = ansLabel.querySelector('[data-copy]');
+    if(cpBtn){
+      cpBtn.onclick = () => {
+        navigator.clipboard.writeText(exprPlain(res, sec.problem.mode));
+        showGameMsg(sec,'คัดลอกสมการแล้ว','good');
+      };
+    }
+  }
   sec.ref.answer.classList.add('show');
   if(sec.ref.check) sec.ref.check.disabled=true;
   if(sec.ref.reveal) sec.ref.reveal.disabled=true;
@@ -1601,11 +1751,13 @@ function setupGameUI(sec,show){
   if(show){
     initGameState(sec);
     const isManual = (cfg.plotMode && cfg.plotMode.value==='manual');
+    const isPos = sec.problem && sec.problem.mode === 'pos';
     sec.plotState = isManual ? 'plotting' : 'solved';
     sec.userCells = new Map();
     if(isManual){
       const total = 1<<sec.problem.varCount;
-      for(let i=0; i<total; i++) sec.userCells.set(i, '0');
+      const defVal = isPos ? '1' : '0';
+      for(let i=0; i<total; i++) sec.userCells.set(i, defVal);
     }
 
     const gd=buildGameKmap(sec.problem, sec);
@@ -1615,7 +1767,9 @@ function setupGameUI(sec,show){
 
     if(isManual){
       sec.ref.plotbar.style.display='flex';
-      sec.ref.plothint.innerHTML='คลิกที่ช่องเพื่อสลับค่า: 0 → 1 → x (เสร็จแล้วกด "ตรวจการลงตาราง")';
+      sec.ref.plothint.innerHTML=isPos
+        ? 'คลิกที่ช่องเพื่อสลับค่า: 1 → 0 → x (เสร็จแล้วกด "ตรวจการลงตาราง")'
+        : 'คลิกที่ช่องเพื่อสลับค่า: 0 → 1 → x (เสร็จแล้วกด "ตรวจการลงตาราง")';
       sec.ref.gamecontrols.style.display='none';
       sec.ref.gameinfo.style.display='none';
       sec.ref.check.style.display='none';
@@ -1757,7 +1911,10 @@ cfg.tmode.onchange=()=>{const up=cfg.tmode.value==='up';
   [cfg.minK,cfg.secK].forEach(i=>i.disabled=up);
   state.sections.forEach(s=>{if(s.phase==='idle')s.timer=newTimer(cfg.tmode.value);});tick();};
 [cfg.minK,cfg.secK].forEach(inp=>inp.onchange=()=>tick());
-cfg.vars.onchange=()=>tick();
+cfg.vars.onchange=()=>{ state.sections.forEach(s=>{ if(s.phase==='running') doGenerate(s); }); tick(); };
+cfg.logicMode.onchange=()=>{ state.sections.forEach(s=>{ if(s.phase==='running') doGenerate(s); }); tick(); };
+cfg.difficulty.onchange=()=>{ state.sections.forEach(s=>{ if(s.phase==='running') doGenerate(s); }); tick(); };
+cfg.plotMode.onchange=()=>{ state.sections.forEach(s=>{ if(s.phase==='running') setupGameUI(s, true); }); };
 cfg.playMode.onchange=()=>syncAllCheckBtns();
 
 /* ---- streak reset button ---- */
