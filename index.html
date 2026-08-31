@@ -194,8 +194,64 @@
   .lg{display:inline-flex; align-items:center; gap:4px; margin:0 8px 3px 0}
   .lg i{width:12px; height:12px; border-radius:3px; border:2px solid; display:inline-block}
 
+  /* ---------- Interactive K-Map Game ---------- */
+  .kmap-game{margin-top:8px}
+  .kmap-game:not(.show){display:none}
+  .kmap-game-svg{width:100%;max-width:300px;height:auto;display:block;margin:0 auto;touch-action:none;user-select:none;-webkit-user-select:none}
+  .km-icell{fill:var(--bg3);stroke:var(--line2);stroke-width:1.5;cursor:pointer;transition:fill .12s, stroke .12s, filter .12s}
+  .km-icell:hover{fill:var(--bg4);stroke:var(--line)}
+  .km-icell.one{fill:rgba(52,211,153,.18)}
+  .km-icell.one:hover{fill:rgba(52,211,153,.28)}
+  .km-icell.dc{fill:rgba(246,182,75,.12)}
+  .km-icell.dc:hover{fill:rgba(246,182,75,.22)}
+  .km-icell.selected{fill:rgba(34,211,238,.28)!important;stroke:var(--cyan)!important;stroke-width:2.5!important;filter:drop-shadow(0 0 5px rgba(34,211,238,.6))}
+  .km-cell-plot{cursor:pointer}
+  .km-cell-plot:hover{stroke:var(--cyan)!important;stroke-width:2px;filter:drop-shadow(0 0 4px rgba(34,211,238,.45))}
+  .km-midx{font-family:var(--mono);font-size:8.5px;fill:var(--faint);opacity:.65;pointer-events:none}
+  .km-ival{font-family:var(--mono);text-anchor:middle;fill:var(--muted);font-size:18px;pointer-events:none}
+  .km-ival.one{fill:#c6ffe6;font-weight:700}
+  .km-ival.dc{fill:var(--amber);font-weight:700}
+  .km-iheader{font-family:var(--mono);fill:var(--faint);text-anchor:middle;font-size:11px;pointer-events:none}
+  .km-preview-rect{fill:rgba(108,140,255,.16);stroke:var(--accent);stroke-width:2.2;stroke-dasharray:5 3;rx:8;pointer-events:none}
+  .km-group-rect{stroke-linejoin:round;pointer-events:none;transition:stroke-width .15s}
+  .km-group:hover .km-group-rect{stroke-width:3.2!important}
+  .km-group-label{font-family:var(--mono);font-size:11px;fill:#fff;text-anchor:middle;pointer-events:none;font-weight:700;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+  .km-group-del{opacity:0;transition:opacity .15s}
+  .km-group:hover .km-group-del{opacity:1}
+  .km-select-bar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:7px;padding:6px 10px;background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.25);border-radius:var(--radius-s);animation:fade .18s ease}
+  .km-select-hint{font-size:11.5px;color:var(--muted);flex:1 1 auto}
+  .km-plot-bar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:7px;padding:6px 10px;background:rgba(108,140,255,.09);border:1px solid rgba(108,140,255,.3);border-radius:var(--radius-s);animation:fade .18s ease}
+  .km-plot-hint{font-size:11.5px;color:var(--muted);flex:1 1 auto;line-height:1.4}
+  .km-plot-err{animation:kmPlotErrBlink .7s ease 3}
+  @keyframes kmPlotErrBlink{0%,100%{fill:rgba(248,113,122,.15);stroke:var(--red)}50%{fill:rgba(248,113,122,.55);stroke:var(--red);stroke-width:2.5}}
+  .plot-chip{display:inline-block;padding:0 3px;border-radius:3px;transition:all .15s ease}
+  .plot-chip.matched{color:var(--green);font-weight:700;background:rgba(52,211,153,.15);box-shadow:0 0 0 1px rgba(52,211,153,.3)}
+  .km-game-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
+  .km-game-info{font-size:12px;color:var(--muted);margin-top:6px;min-height:18px}
+  .km-result{margin-top:10px;padding:10px 12px;border-radius:var(--radius-s);display:none;animation:fade .25s ease}
+  .km-result.show{display:block}
+  .km-result.correct{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.35)}
+  .km-result.partial{background:rgba(246,182,75,.1);border:1px solid rgba(246,182,75,.35)}
+  .km-result.wrong{background:rgba(248,113,122,.1);border:1px solid rgba(248,113,122,.35)}
+  .km-result .result-text{font-size:13px;font-weight:700}
+  .km-result.correct .result-text{color:var(--green)}
+  .km-result.partial .result-text{color:var(--amber)}
+  .km-result.wrong .result-text{color:var(--red)}
+  .km-result .result-detail{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.7}
+  .km-result .result-detail .chip{vertical-align:middle}
+  .km-uncovered{animation:kmBlink 1s ease 3}
+  @keyframes kmBlink{0%,100%{fill:rgba(248,113,122,.15)}50%{fill:rgba(248,113,122,.5)}}
+  @keyframes popIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+  .km-group-rect.new{animation:popIn .2s ease}
+  body.compact .kmap-game-svg{max-width:240px}
+  body.compact .km-plot-bar{padding:5px 7px;gap:5px}
+  body.compact .km-plot-hint{font-size:10.5px}
+  body.compact .km-game-info{font-size:11px}
+  body.compact .km-result{padding:7px;margin-top:7px}
+  body.tiny .kmap-game-svg{max-width:200px}
+
   /* buttons row */
-  .c-actions{display:grid; grid-template-columns:1fr auto auto; gap:8px; padding:0 13px 13px}
+  .c-actions{display:grid; grid-template-columns:1fr auto auto auto; gap:8px; padding:0 13px 13px}
   .c-actions .btn{justify-content:center; width:100%; padding:9px 8px}
 
   /* compact mode: auto-applied when sections get short (small screen / many rows) so more fits without scroll */
@@ -236,30 +292,53 @@
   /* --cols and --rows are driven responsively by updateLayout() in JS (accounts for these same breakpoints) */
   @media(max-width:720px){ .bar-inner{padding:6px 12px} main{padding:10px 12px} }
 
+  /* ---------- Streak System ---------- */
+  .streak-board{display:flex;align-items:center;gap:8px;background:rgba(28,32,48,.82);border:1px solid var(--line);padding:4px 8px;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.25);backdrop-filter:blur(8px)}
+  .streak-card{display:flex;align-items:center;gap:6px;padding:4px 9px;background:rgba(255,255,255,.04);border:1px solid var(--line2);border-radius:10px;transition:all .25s cubic-bezier(.34,1.56,.64,1)}
+  .streak-card.current{border-color:rgba(251,146,60,.3);background:rgba(251,146,60,.06)}
+  .streak-card.current.active{border-color:rgba(251,146,60,.75);background:radial-gradient(ellipse at center,rgba(251,146,60,.22),rgba(234,88,12,.1));box-shadow:0 0 14px rgba(251,146,60,.4)}
+  .streak-card.best{border-color:rgba(246,182,75,.3);background:rgba(246,182,75,.06)}
+  .streak-card.total{border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.06)}
+  .streak-fire{font-size:18px;line-height:1;display:inline-block;transition:transform .2s ease}
+  .streak-card.current.active .streak-fire{animation:flameBounce 1.2s infinite ease-in-out;filter:drop-shadow(0 0 6px rgba(251,146,60,.8))}
+  @keyframes flameBounce{0%,100%{transform:scale(1) rotate(0deg)}30%{transform:scale(1.25) rotate(-8deg)}70%{transform:scale(1.15) rotate(6deg)}}
+  .streak-icon{font-size:15px;line-height:1}
+  .streak-info{display:flex;flex-direction:column;line-height:1.1}
+  .streak-num{font-family:var(--mono);font-size:14px;font-weight:800;color:var(--txt)}
+  .streak-card.current .streak-num{color:#fdba74}
+  .streak-card.best .streak-num{color:#fcd34d}
+  .streak-card.total .streak-num{color:#6ee7b7}
+  .streak-lbl{font-size:9.5px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.05em}
+  .streak-reset-btn{background:transparent;border:none;color:var(--faint);cursor:pointer;padding:4px 6px;font-size:12px;border-radius:6px;transition:all .15s}
+  .streak-reset-btn:hover{color:var(--red);background:rgba(248,113,122,.12)}
+
+  /* Milestone Toast Celebration */
+  .streak-toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-25px);background:linear-gradient(135deg,#ea580c,#f59e0b);color:#fff;padding:10px 20px;border-radius:30px;font-weight:700;font-size:14.5px;box-shadow:0 8px 24px rgba(234,88,12,.5);z-index:9999;pointer-events:none;opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:8px}
+  .streak-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
   /* ---------- Responsive refresh ---------- */
   body{min-height:100vh;height:auto;overflow-x:hidden;overflow-y:auto}
   header.bar{position:sticky;top:0}
   .bar-inner{padding:14px clamp(16px,3vw,36px);gap:14px}
-  .brand{justify-content:space-between;flex-wrap:nowrap}
+  .brand{justify-content:space-between;flex-wrap:nowrap;gap:12px}
   .brand-copy{display:flex;align-items:center;gap:12px;min-width:0}
   .brand h1{font-size:clamp(16px,2vw,21px)}
   .eyebrow{color:var(--cyan);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-  .controls{display:grid;grid-template-columns:repeat(4,minmax(125px,1fr)) auto;align-items:end;gap:12px;padding:12px;background:rgba(28,32,48,.68);border:1px solid var(--line);border-radius:16px}
+  .controls{display:grid;grid-template-columns:repeat(8,minmax(105px,1fr)) auto;align-items:end;gap:10px;padding:12px;background:rgba(28,32,48,.68);border:1px solid var(--line);border-radius:16px}
   .controls .divider{display:none}.field{min-width:0}.inp,select.inp{width:100%}.inp.num{width:100%}
   .control-actions{grid-column:span 1}.global-actions{display:grid;grid-template-columns:repeat(2,max-content);gap:7px}
   main{max-width:1680px;padding:18px clamp(16px,3vw,36px);overflow:visible}
   .grid{height:auto;grid-template-rows:none;align-items:stretch}
   .card{min-height:355px}
   .difficulty-note{font-size:11px;color:var(--faint);margin-top:4px}
-  .input-random{width:100%;margin-top:7px;justify-content:center;color:var(--violet);border-color:rgba(167,139,250,.42)}
-  .input-random.active{background:rgba(167,139,250,.18);border-color:var(--violet);color:#ded4ff}
-  .vars-pill{font-family:var(--mono);font-size:11px;color:var(--violet);background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);padding:3px 7px;border-radius:99px}
-  @media(max-width:1080px){
-    .controls{grid-template-columns:repeat(3,minmax(130px,1fr)) auto}
+  .vars-pill{font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.3);padding:3px 7px;border-radius:99px}
+  @media(max-width:1300px){
+    .controls{grid-template-columns:repeat(4,minmax(120px,1fr)) auto}
     .control-actions{grid-column:span 1}.card{min-height:340px}
   }
   @media(max-width:720px){
-    header.bar{position:static}.bar-inner{padding:12px}.brand .sub{display:none}.logo{width:36px;height:36px}
+    header.bar{position:static}.bar-inner{padding:12px}.brand{flex-wrap:wrap;gap:10px}.brand .sub{display:none}.logo{width:36px;height:36px}
+    .streak-board{width:100%;justify-content:space-between}
     .controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px}.control-actions{grid-column:1 / -1}
     .global-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.global-actions .btn{justify-content:center}
     main{padding:12px}.grid{gap:12px}.card{min-height:0}.c-body{min-height:175px}
@@ -272,14 +351,37 @@
   <div class="bar-inner">
     <div class="brand">
       <div class="brand-copy">
-        <div class="logo">Σ</div>
+        <div class="logo">K</div>
         <div>
-          <div class="eyebrow">Boolean practice studio</div>
-          <h1>ฝึกลดรูปสมการบูลีน</h1>
-          <div class="sub">เลือกประเภทโจทย์ ความยาก และเริ่มฝึกได้ทันที</div>
+          <div class="eyebrow">Karnaugh map practice studio</div>
+          <h1>เกมฝึกวง K-Map</h1>
+          <div class="sub">ฝึกจับกลุ่มลดรูปสมการด้วย Karnaugh Map (Minimal SOP)</div>
         </div>
       </div>
-      <div class="spacer"></div>
+      <div class="streak-board" id="streakBoard">
+        <div class="streak-card current" id="streakCardCurrent" title="ตอบถูกต่อเนื่อง">
+          <div class="streak-fire" id="streakFire">🔥</div>
+          <div class="streak-info">
+            <span class="streak-num" id="streakVal">0</span>
+            <span class="streak-lbl">Streak</span>
+          </div>
+        </div>
+        <div class="streak-card best" title="สถิติ Streak ต่อเนื่องสูงสุด">
+          <div class="streak-icon">🏆</div>
+          <div class="streak-info">
+            <span class="streak-num" id="bestStreakVal">0</span>
+            <span class="streak-lbl">Best</span>
+          </div>
+        </div>
+        <div class="streak-card total" title="จำนวนข้อที่ตอบถูกต้องทั้งหมด">
+          <div class="streak-icon">⭐</div>
+          <div class="streak-info">
+            <span class="streak-num" id="totalSolvedVal">0</span>
+            <span class="streak-lbl">Solved</span>
+          </div>
+        </div>
+        <button class="streak-reset-btn" id="streakResetBtn" title="รีเซ็ตสถิติ Streak">↺</button>
+      </div>
     </div>
 
     <div class="controls">
@@ -294,15 +396,6 @@
           <option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
         </select>
       </div>
-      <div class="divider"></div>
-      <div class="field">
-        <label>วิธีทำ</label>
-        <select id="cfgMethod" class="inp">
-          <option value="random" selected>สุ่ม (K-Map / Boolean)</option>
-          <option value="kmap">K-Map ทั้งหมด</option>
-          <option value="bool">Boolean Algebra ทั้งหมด</option>
-        </select>
-      </div>
       <div class="field">
         <label>จำนวนตัวแปร</label>
         <select id="cfgVars" class="inp">
@@ -310,7 +403,20 @@
           <option value="3" selected>3 input · a, b, c</option>
           <option value="4">4 input · a, b, c, d</option>
         </select>
-        <button id="cfgRandomVars" class="btn ghost input-random" type="button">🎲 สุ่ม 2 / 3 input</button>
+      </div>
+      <div class="field">
+        <label>โหมดลงตาราง</label>
+        <select id="cfgPlotMode" class="inp">
+          <option value="manual" selected>✏️ ลงค่าเองจากโจทย์</option>
+          <option value="auto">⚡ เติมค่าอัตโนมัติ</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>โหมดเล่น / ตรวจ</label>
+        <select id="cfgPlayMode" class="inp">
+          <option value="normal" selected>🛡️ ปกติ (แก้ไขได้)</option>
+          <option value="hardcore">💀 Hardcore (ส่งแล้วเฉลยเลย)</option>
+        </select>
       </div>
       <div class="field">
         <label>ความยาก</label>
@@ -329,17 +435,10 @@
         </select>
       </div>
       <div class="field time-kmap" id="timeFieldK">
-        <label>⏱ เวลา K-Map</label>
+        <label>⏱ เวลาทำโจทย์</label>
         <div class="time-group">
           <input id="cfgMinK" class="inp num" type="number" min="0" max="99" value="5"><span>:</span>
           <input id="cfgSecK" class="inp num" type="number" min="0" max="59" value="00">
-        </div>
-      </div>
-      <div class="field time-bool" id="timeFieldB">
-        <label>⏱ เวลา Boolean</label>
-        <div class="time-group">
-          <input id="cfgMinB" class="inp num" type="number" min="0" max="99" value="7"><span>:</span>
-          <input id="cfgSecB" class="inp num" type="number" min="0" max="59" value="00">
         </div>
       </div>
       <div class="divider"></div>
@@ -355,6 +454,7 @@
     </div>
   </div>
 </header>
+<div id="streakToast" class="streak-toast"></div>
 
 <main>
   <div id="grid" class="grid"></div>
@@ -445,20 +545,85 @@ function sopPlain(res){if(res.const===0)return '0';if(res.const===1)return '1';r
    ====================================================================== */
 const $=s=>document.getElementById(s);
 const grid=$('grid');
-const cfg={count:$('cfgCount'),cols:$('cfgCols'),method:$('cfgMethod'),tmode:$('cfgTimerMode'),
-  minK:$('cfgMinK'),secK:$('cfgSecK'),minB:$('cfgMinB'),secB:$('cfgSecB'), vars:$('cfgVars'), difficulty:$('cfgDifficulty')};
-const state={sections:[],nextId:1,pausedAll:false,randomVars:false};
+const cfg={count:$('cfgCount'),cols:$('cfgCols'),tmode:$('cfgTimerMode'),
+  minK:$('cfgMinK'),secK:$('cfgSecK'), vars:$('cfgVars'), plotMode:$('cfgPlotMode'),
+  playMode:$('cfgPlayMode'), difficulty:$('cfgDifficulty')};
+const state={sections:[],nextId:1,pausedAll:false};
 
-// countdown duration depends on the section's method: K-Map vs Boolean have separate settings
-function targetMs(method){
-  const mm=method==='bool'?cfg.minB:cfg.minK, ss=method==='bool'?cfg.secB:cfg.secK;
-  return ((+mm.value||0)*60+(+ss.value||0))*1000;
+/* ======================================================================
+   Streak System
+   ====================================================================== */
+const STREAK_KEY = 'kmap_streak_stats_v1';
+let streakStats = { current: 0, best: 0, total: 0 };
+try {
+  const saved = localStorage.getItem(STREAK_KEY);
+  if(saved) streakStats = Object.assign(streakStats, JSON.parse(saved));
+} catch(e){}
+
+let toastTid = null;
+function showStreakToast(msg){
+  const el = $('streakToast');
+  if(!el) return;
+  el.innerHTML = msg;
+  el.classList.add('show');
+  clearTimeout(toastTid);
+  toastTid = setTimeout(()=>{ el.classList.remove('show'); }, 2600);
+}
+
+function saveStreakStats(){
+  try {
+    localStorage.setItem(STREAK_KEY, JSON.stringify(streakStats));
+  } catch(e){}
+}
+
+function updateStreakUI(milestoneText){
+  const sv = $('streakVal'), bv = $('bestStreakVal'), tv = $('totalSolvedVal');
+  const cardCur = $('streakCardCurrent');
+  if(sv) sv.textContent = streakStats.current;
+  if(bv) bv.textContent = streakStats.best;
+  if(tv) tv.textContent = streakStats.total;
+  if(cardCur) cardCur.classList.toggle('active', streakStats.current > 0);
+  saveStreakStats();
+  if(milestoneText) showStreakToast(milestoneText);
+}
+
+function onProblemSolved(sec){
+  streakStats.current++;
+  streakStats.total++;
+  let isNewBest = false;
+  if(streakStats.current > streakStats.best){
+    streakStats.best = streakStats.current;
+    isNewBest = true;
+  }
+  let milestone = null;
+  if(streakStats.current === 3) milestone = '🔥 Streak x3! เครื่องกำลังร้อน!';
+  else if(streakStats.current === 5) milestone = '🔥 Streak x5! ยอดเยี่ยมมาก!';
+  else if(streakStats.current === 10) milestone = '⚡ Streak x10! เซียน K-Map ตัวจริง!';
+  else if(streakStats.current === 20) milestone = '👑 Streak x20! เทพ K-Map ไร้เทียมทาน!';
+  else if(streakStats.current % 10 === 0) milestone = `🔥 Streak x${streakStats.current}! สุดยอดมาก!`;
+  else if(isNewBest && streakStats.current > 3) milestone = `🏆 New Best Streak! ทะลุสถิติใหม่ ${streakStats.current} ข้อ!`;
+
+  updateStreakUI(milestone);
+}
+
+function onStreakBreak(reason){
+  if(streakStats.current > 0){
+    const prev = streakStats.current;
+    streakStats.current = 0;
+    updateStreakUI();
+    if(prev >= 3){
+      showStreakToast(`💔 Streak หลุดที่ ${prev} ข้อ! สู้ใหม่อีกครั้ง!`);
+    }
+  }
+}
+
+function targetMs(){
+  return ((+cfg.minK.value||0)*60+(+cfg.secK.value||0))*1000;
 }
 function fmt(ms){ms=Math.max(0,ms);const t=Math.floor(ms/1000);return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');}
 function randInt(n){return Math.floor(Math.random()*n);}
 function sample(pool,k){const p=[...pool],out=[];for(let i=0;i<k&&p.length;i++)out.push(p.splice(randInt(p.length),1)[0]);return out;}
-function chooseMethod(){const m=cfg.method.value;return m==='random'?(Math.random()<0.5?'kmap':'bool'):m;}
-function selectedVarCount(){return state.randomVars ? 2+randInt(2) : +cfg.vars.value;}
+function selectedVarCount(){return +cfg.vars.value;}
 
 function genProblem(){
   const varCount=selectedVarCount(), all=[...Array(1<<varCount).keys()];
@@ -469,7 +634,7 @@ function genProblem(){
   const rest=all.filter(x=>!minterms.includes(x));
   const dcCount=Math.min(rest.length,r[2]+randInt(Math.max(1,r[3]-r[2]+1)));
   const dontcares=sample(rest,dcCount).sort((a,b)=>a-b);
-  return {minterms,dontcares,method:chooseMethod(),varCount,result:minimize(minterms,dontcares,varCount)};
+  return {minterms,dontcares,method:'kmap',varCount,result:minimize(minterms,dontcares,varCount)};
 }
 
 /* ---- Timer object ----
@@ -479,11 +644,11 @@ function tVal(t,now){return t.mode==='down' ? t.base-(t.running?now-t.anchor:0) 
 function tFreeze(t,now){t.base=tVal(t,now);t.running=false;}
 function tRun(t,now){t.anchor=now;t.running=true;}
 
-function methodInfo(m){return m==='kmap'?{label:'K-Map',cls:'kmap',word:'Karnaugh Map (K-Map)'}:{label:'Boolean Algebra',cls:'bool',word:'พีชคณิตบูลีน (Boolean Algebra)'};}
+function methodInfo(){return {label:'K-Map',cls:'kmap',word:'Karnaugh Map (K-Map)'};}
 
 /* ---- build one card ---- */
 function createSection(){
-  const sec={id:state.nextId++,phase:'idle',problem:null,timer:newTimer(cfg.tmode.value)};
+  const sec={id:state.nextId++,phase:'idle',problem:null,timer:newTimer(cfg.tmode.value),plotState:'auto',userCells:new Map(),streakRewarded:false};
   const el=document.createElement('div'); el.className='card';
   el.innerHTML=`
     <div class="c-head">
@@ -500,7 +665,24 @@ function createSection(){
     <div class="t-track"><div class="t-fill" data-fill style="width:100%"></div></div>
     <div class="c-body">
       <div class="c-content">
-      <div class="prob empty" data-prob>กด “สร้างโจทย์” เพื่อเริ่มและจับเวลา</div>
+      <div class="prob empty" data-prob>กด "สร้างโจทย์" เพื่อเริ่มและจับเวลา</div>
+      <div class="kmap-game" data-kmgame></div>
+      <div class="km-plot-bar" data-plotbar style="display:none">
+        <button class="btn primary" data-checkplot style="font-size:12px;padding:5px 11px">✓ ตรวจการลงตาราง</button>
+        <button class="btn ghost" data-autoplot style="font-size:12px;padding:5px 8px" title="เติมค่า 1 และ X จากโจทย์ให้อัตโนมัติ">⚡ เติมให้อัตโนมัติ</button>
+        <span class="km-plot-hint" data-plothint>คลิกที่ช่องเพื่อสลับค่า: 0 → 1 → x</span>
+      </div>
+      <div class="km-select-bar" data-selectbar style="display:none">
+        <button class="btn primary" data-addgroup style="font-size:12px;padding:5px 11px">＋ วงกลุ่มนี้</button>
+        <button class="btn ghost" data-clearselect style="font-size:12px;padding:5px 8px">ยกเลิก</button>
+        <span class="km-select-hint" data-selecthint></span>
+      </div>
+      <div class="km-game-controls" data-gamecontrols style="display:none">
+        <button class="btn ghost" data-undo disabled style="font-size:12px;padding:5px 9px">↩ ลบกลุ่มล่าสุด</button>
+        <button class="btn ghost danger" data-cleargroups disabled style="font-size:12px;padding:5px 9px">✕ ลบกลุ่มทั้งหมด</button>
+      </div>
+      <div class="km-game-info" data-gameinfo style="display:none"></div>
+      <div class="km-result" data-result></div>
       <div class="answer" data-answer>
         <div class="ans-label">✓ เฉลย — สมการที่สั้นที่สุด (Minimal SOP)
           <button class="mini" data-copy>คัดลอก</button>
@@ -516,6 +698,7 @@ function createSection(){
     </div>
     <div class="c-actions">
       <button class="btn primary" data-gen>สร้างโจทย์</button>
+      <button class="btn" data-check style="display:none;color:var(--cyan);border-color:rgba(34,211,238,.45)">✓ ตรวจ</button>
       <button class="btn" data-reveal disabled>เฉลย</button>
       <button class="btn ghost" data-clear>เคลียร์</button>
     </div>`;
@@ -528,21 +711,39 @@ function createSection(){
     kmap:el.querySelector('[data-kmap]'), usedwrap:el.querySelector('[data-usedwrap]'),
     used:el.querySelector('[data-used]'),
     gen:el.querySelector('[data-gen]'), reveal:el.querySelector('[data-reveal]'), clear:el.querySelector('[data-clear]'),
-    copy:el.querySelector('[data-copy]'), kmtoggle:el.querySelector('[data-kmtoggle]')
+    copy:el.querySelector('[data-copy]'), kmtoggle:el.querySelector('[data-kmtoggle]'),
+    kmgame:el.querySelector('[data-kmgame]'),
+    plotbar:el.querySelector('[data-plotbar]'), checkplot:el.querySelector('[data-checkplot]'),
+    autoplot:el.querySelector('[data-autoplot]'), plothint:el.querySelector('[data-plothint]'),
+    selectbar:el.querySelector('[data-selectbar]'),
+    addgroup:el.querySelector('[data-addgroup]'), clearselect:el.querySelector('[data-clearselect]'),
+    selecthint:el.querySelector('[data-selecthint]'),
+    gamecontrols:el.querySelector('[data-gamecontrols]'),
+    gameinfo:el.querySelector('[data-gameinfo]'), result:el.querySelector('[data-result]'),
+    check:el.querySelector('[data-check]'), undo:el.querySelector('[data-undo]'),
+    cleargroups:el.querySelector('[data-cleargroups]')
   };
   sec.ref.gen.onclick=()=>doGenerate(sec);
   sec.ref.reveal.onclick=()=>doReveal(sec);
   sec.ref.clear.onclick=()=>doClear(sec);
   sec.ref.copy.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText('f(a,b,c,d) = '+sopPlain(sec.problem.result));sec.ref.copy.textContent='คัดลอกแล้ว ✓';setTimeout(()=>sec.ref.copy.textContent='คัดลอก',1400);};
   sec.ref.kmtoggle.onclick=()=>{const k=sec.ref.kmap;const on=k.classList.toggle('show');sec.ref.kmtoggle.textContent=(on?'▾':'▸')+' '+(on?'ซ่อน':'แสดง')+' K-map';};
+  sec.ref.check.onclick=()=>doCheckAnswer(sec);
+  sec.ref.checkplot.onclick=()=>doCheckPlotting(sec);
+  sec.ref.autoplot.onclick=()=>doAutoFillPlot(sec);
+  sec.ref.undo.onclick=()=>{if(sec.game&&sec.game.groups.length){sec.game.groups.pop();renderGameGroups(sec);updateGameInfo(sec);syncGameBtns(sec);}};
+  sec.ref.cleargroups.onclick=()=>{if(sec.game){sec.game.groups=[];clearSelection(sec);renderGameGroups(sec);updateGameInfo(sec);syncGameBtns(sec);}};
+  sec.ref.addgroup.onclick=()=>{confirmSelectionGroup(sec);};
+  sec.ref.clearselect.onclick=()=>{clearSelection(sec);};
   return sec;
 }
 
 /* ---- actions ---- */
 function doGenerate(sec){
   sec.problem=genProblem();
+  sec.streakRewarded=false;
   sec.timer=newTimer(cfg.tmode.value);
-  sec.timer.base=sec.timer.mode==='down'?targetMs(sec.problem.method):0;
+  sec.timer.base=sec.timer.mode==='down'?targetMs():0;
   sec.timer.startBase=sec.timer.base;
   tRun(sec.timer,performance.now());
   sec.phase='running';
@@ -552,6 +753,8 @@ function doGenerate(sec){
   sec.ref.reveal.disabled=false;
   sec.ref.gen.textContent='สุ่มโจทย์ใหม่';
   sec.ref.usedwrap.style.display='none';
+  sec.ref.result.className='km-result'; sec.ref.result.innerHTML='';
+  setupGameUI(sec,true);
   updateCard(sec,performance.now());
 }
 function doReveal(sec){
@@ -560,6 +763,59 @@ function doReveal(sec){
   if(sec.timer.running)tFreeze(sec.timer,now);
   sec.phase='revealed';
   const res=sec.problem.result;
+  // If user has drawn groups in K-Map game, evaluate them before revealing
+  if(sec.game&&sec.game.groups.length>0){
+    const {minterms,dontcares,varCount}=sec.problem;
+    const on=new Set(minterms),dc=new Set(dontcares);
+    let hasInvalid=false;
+    for(const g of sec.game.groups){
+      for(const idx of g.cells){
+        if(!on.has(idx)&&!dc.has(idx)){hasInvalid=true;break;}
+      }
+      if(hasInvalid) break;
+    }
+    const covered=new Set();
+    for(const g of sec.game.groups) for(const idx of g.cells){
+      if(on.has(idx))covered.add(idx);
+    }
+    const uncov=minterms.filter(m=>!covered.has(m));
+    const userPIs=sec.game.groups.map(g=>g.pi);
+    const userLits=userPIs.reduce((a,pi)=>a+literals(pi,varCount),0),userN=userPIs.length;
+    const optLits=res.const!=null?0:res.terms.reduce((a,t)=>a+literals(t,varCount),0);
+    const optN=res.const!=null?(res.const?1:0):res.terms.length;
+    const isOpt=!hasInvalid&&uncov.length===0&&userN<=optN&&userLits<=optLits;
+    const timeUsed=sec.timer.mode==='down'?fmt(sec.timer.startBase-tVal(sec.timer,now)):fmt(tVal(sec.timer,now));
+    const userSOP=userPIs.map((pi,i)=>`<span style="color:${sec.game.groups[i].color}">${termHTML(pi,varCount)}</span>`).join('<span class="op">+</span>');
+    let msg,detail;
+    if(hasInvalid){
+      if(!sec.streakRewarded) onStreakBreak('reveal');
+      msg='❌ ไม่ถูกต้อง — มีกลุ่มที่ครอบคลุม cell ที่เป็น 0';
+      detail=`คำตอบของคุณ: f = ${userSOP}<br><span class="chip time">ใช้เวลา ${timeUsed}</span>`;
+      showCheckResult(sec,'wrong',msg,detail);
+    }else if(uncov.length>0){
+      if(!sec.streakRewarded) onStreakBreak('reveal');
+      msg=`⚠️ ไม่ถูกต้อง — ยังไม่ครบ (ขาดอีก ${uncov.length} minterm)`;
+      detail=`คำตอบของคุณ: f = ${userSOP} (${userN} พจน์, ${userLits} lit)<br><span class="chip time">ใช้เวลา ${timeUsed}</span>`;
+      showCheckResult(sec,'partial',msg,detail);
+    }else if(isOpt){
+      const isFirst = !sec.streakRewarded;
+      if(isFirst){
+        sec.streakRewarded = true;
+        onProblemSolved(sec);
+      }
+      msg='🎉 ถูกต้อง 100%! ลดรูปสั้นที่สุด (Optimal Minimal SOP)';
+      detail=`f = ${userSOP}<br><span class="chip time">ใช้เวลา ${timeUsed}</span> · <span class="chip">${userN} พจน์</span> · <span class="chip">${userLits} literal</span>`+
+        (isFirst ? ` · <span class="chip" style="background:rgba(251,146,60,.18);color:#fdba74;border:1px solid rgba(251,146,60,.4)">🔥 Streak ${streakStats.current}</span>` : '');
+      showCheckResult(sec,'correct',msg,detail);
+    }else{
+      if(!sec.streakRewarded) onStreakBreak('reveal');
+      msg='⚠️ ยังไม่ถูกต้อง — ยังลดรูปไม่สั้นที่สุด!';
+      detail=`คำตอบของคุณ: f = ${userSOP} (<b>${userN}</b> พจน์, <b>${userLits}</b> literal)<br>เฉลยที่สั้นที่สุด: f = ${sopHTML(res)} (<b>${optN}</b> พจน์, <b>${optLits}</b> literal)<br><span class="chip time">ใช้เวลา ${timeUsed}</span>`;
+      showCheckResult(sec,'partial',msg,detail);
+    }
+  } else {
+    if(!sec.streakRewarded) onStreakBreak('reveal');
+  }
   sec.ref.eq.innerHTML='f = '+sopHTML(res);
   const terms=res.const!=null?(res.const===1?1:0):res.terms.length;
   const lits=res.const!=null?0:res.terms.reduce((a,t)=>a+literals(t,res.varCount),0);
@@ -581,20 +837,23 @@ function doClear(sec){
   sec.ref.reveal.disabled=true;
   sec.ref.gen.textContent='สร้างโจทย์';
   sec.ref.usedwrap.style.display='none';
+  setupGameUI(sec,false);
   updateCard(sec,performance.now());
 }
 
 function renderProblem(sec){
-  const p=sec.problem, mi=methodInfo(p.method);
+  const p=sec.problem;
+  const mmHtml=p.minterms.map(m=>`<span class="plot-chip" data-plot-m="${m}">${m}</span>`).join(', ');
+  const ddHtml=p.dontcares.length?p.dontcares.map(d=>`<span class="plot-chip" data-plot-d="${d}">${d}</span>`).join(', '):'ไม่มี';
   sec.ref.prob.className='prob';
   sec.ref.prob.innerHTML=
     `<span class="fn">f(${VARS.slice(0,p.varCount).join(', ')}) =</span> <span class="vars-pill">${p.varCount} input</span><br>`+
-    `<span class="sig">Σ<sub>m</sub></span>(<span class="mm">${p.minterms.join(', ')}</span>) `+
+    `<span class="sig">Σ<sub>m</sub></span>(<span class="mm">${mmHtml}</span>) `+
     `<span class="op" style="color:var(--muted)">+</span> `+
-    `<span class="sig">Σ<sub>d</sub></span>(<span class="dd">${p.dontcares.join(', ')}</span>)`+
-    `<div class="instr">ให้ลดรูปด้วยวิธี <b>${mi.word}</b></div>`;
-  sec.ref.badge.className='badge show '+mi.cls;
-  sec.ref.badge.textContent=mi.label;
+    `<span class="sig">Σ<sub>d</sub></span>(<span class="dd">${ddHtml}</span>)`+
+    `<div class="instr">วงกลุ่มลดรูปสมการด้วย <b>Karnaugh Map (K-Map)</b></div>`;
+  sec.ref.badge.className='badge show kmap';
+  sec.ref.badge.textContent='K-Map';
 }
 
 /* ---- K-map with grouping loops (rows ab, cols cd, Gray order) ---- */
@@ -638,7 +897,6 @@ function buildKmapSVG(p,res){
     s+=`<rect x="${x}" y="${y}" width="${cw}" height="${ch}" class="kmc ${cls}"/>`;
     s+=`<text x="${x+cw/2}" y="${y+ch/2+5}" class="kmv ${cls}">${val}</text>`;
   }
-  // one loop per product term, colour-matched to the equation
   termsWithColor(res).forEach(({t,color},i)=>{
     const rs=kmSpans(kmPositions(t,true)), cs=kmSpans(kmPositions(t,false)), inset=3+Math.min(i,3)*2.2;
     for(const [r0,r1] of rs)for(const [c0,c1] of cs){
@@ -650,11 +908,754 @@ function buildKmapSVG(p,res){
   return s+`<div class="km-cap">1 = minterm · x = don't-care · 0 = ศูนย์ · <b style="color:var(--muted)">วงสี = กลุ่มของแต่ละพจน์ (สีตรงกับพจน์ในสมการ)</b></div>`;
 }
 
+/* ======================================================================
+   Interactive K-Map Game — วาดวงกลุ่มบน K-Map (รองรับวงข้ามขอบ / Wrap-around)
+   ====================================================================== */
+const KM_GRAY2=[0,1];
+function grayIndex(r,c,vc){
+  if(vc===4) return KM_GRAY[r]*4+KM_GRAY[c];
+  if(vc===3) return (r<<2)|KM_GRAY[c];
+  return r*2+c;
+}
+function kmGI(vc){
+  if(vc===4) return {rows:4,cols:4,rl:'ab',cl:'cd',rls:['00','01','11','10'],cls:['00','01','11','10']};
+  if(vc===3) return {rows:2,cols:4,rl:'a',cl:'bc',rls:['0','1'],cls:['00','01','11','10']};
+  return {rows:2,cols:2,rl:'a',cl:'b',rls:['0','1'],cls:['0','1']};
+}
+
+function cellsToPI(cells, vc){
+  if(!cells||!cells.length) return {val:0,dash:0};
+  let dash=0, val=cells[0];
+  for(const m of cells) dash|=(val^m);
+  val&=~dash;
+  return {val,dash};
+}
+
+function validateCellGroup(cellArray, vc){
+  if(!cellArray||!cellArray.length) return null;
+  const n=cellArray.length;
+  if((n&(n-1))!==0) return null;
+  const gi=kmGI(vc);
+  const cellSet=new Set(cellArray);
+  const rowSet=new Set(), colSet=new Set();
+
+  for(let r=0;r<gi.rows;r++){
+    for(let c=0;c<gi.cols;c++){
+      if(cellSet.has(grayIndex(r,c,vc))){
+        rowSet.add(r);
+        colSet.add(c);
+      }
+    }
+  }
+  const rows=[...rowSet].sort((a,b)=>a-b);
+  const cols=[...colSet].sort((a,b)=>a-b);
+
+  if(rows.length*cols.length!==n) return null;
+  for(const r of rows) for(const c of cols){
+    if(!cellSet.has(grayIndex(r,c,vc))) return null;
+  }
+
+  function isValid1D(arr, max){
+    const len=arr.length;
+    if(len===1) return true;
+    if(len===max) return true;
+    if(len===2&&max===4){
+      if((arr[0]===0&&arr[1]===1)||(arr[0]===1&&arr[1]===2)||(arr[0]===2&&arr[1]===3)||(arr[0]===0&&arr[1]===3)) return true;
+      return false;
+    }
+    return false;
+  }
+  if(!isValid1D(rows, gi.rows)) return null;
+  if(!isValid1D(cols, gi.cols)) return null;
+
+  const pi=cellsToPI(cellArray, vc);
+  for(let m=0;m<(1<<vc);m++){
+    if(covers(pi, m)!==cellSet.has(m)) return null;
+  }
+
+  const isWrapRow=rows.length===2&&rows[0]===0&&rows[1]===3;
+  const isWrapCol=cols.length===2&&cols[0]===0&&cols[1]===3;
+  let wrapType='normal';
+  if(isWrapRow&&isWrapCol) wrapType='corner';
+  else if(isWrapRow) wrapType='wrap-row';
+  else if(isWrapCol) wrapType='wrap-col';
+
+  return {rows, cols, cells:cellArray, pi, wrapType};
+}
+
+function buildGameKmap(prob, sec){
+  const {minterms,dontcares,varCount}=prob;
+  const isPlotting = sec && sec.plotState === 'plotting';
+  const gi=kmGI(varCount),on=new Set(minterms),dc=new Set(dontcares);
+  const M=4,hw=35,hh=24,cw=56,ch=50;
+  const x0=M+hw,y0=M+hh,W=x0+gi.cols*cw+M,H=y0+gi.rows*ch+M;
+  let s=`<svg viewBox="0 0 ${W} ${H}" class="kmap-game-svg" xmlns="http://www.w3.org/2000/svg">`;
+  s+=`<text x="${M+hw-4}" y="${M+hh-6}" class="km-iheader" text-anchor="end" style="font-size:9px">${gi.rl}\\${gi.cl}</text>`;
+  for(let c=0;c<gi.cols;c++) s+=`<text x="${x0+c*cw+cw/2}" y="${M+hh-6}" class="km-iheader">${gi.cls[c]}</text>`;
+  for(let r=0;r<gi.rows;r++){
+    s+=`<text x="${M+hw-6}" y="${y0+r*ch+ch/2+5}" class="km-iheader" text-anchor="end">${gi.rls[r]}</text>`;
+    for(let c=0;c<gi.cols;c++){
+      const idx=grayIndex(r,c,varCount);
+      let cls='', val='0';
+      if(isPlotting){
+        val = (sec.userCells && sec.userCells.get(idx)) || '0';
+        cls = (val==='1'?'one':val==='x'?'dc':'') + ' km-cell-plot';
+      } else {
+        const isOn=on.has(idx), isDc=dc.has(idx);
+        cls = isOn?'one':isDc?'dc':'';
+        val = isOn?'1':isDc?'x':'0';
+      }
+      s+=`<rect x="${x0+c*cw}" y="${y0+r*ch}" width="${cw}" height="${ch}" class="km-icell ${cls}" data-r="${r}" data-c="${c}" data-idx="${idx}"/>`;
+      s+=`<text x="${x0+c*cw+4}" y="${y0+r*ch+10}" class="km-midx">m${idx}</text>`;
+      s+=`<text x="${x0+c*cw+cw/2}" y="${y0+r*ch+ch/2+7}" class="km-ival ${cls}">${val}</text>`;
+    }
+  }
+  s+=`<g class="km-preview-layer"></g><g class="km-groups-layer"></g></svg>`;
+  const footHint = isPlotting
+    ? `💡 <b>โหมดลงตาราง:</b> คลิกที่ช่องเพื่อใส่ 1 หรือ x จากโจทย์ แล้วกด "✓ ตรวจการลงตาราง"`
+    : `💡 ลากหรือคลิกช่องเพื่อวงกลุ่ม · <b>คลิกช่องขอบตรงข้ามเพื่อวงข้าม</b>`;
+  s+=`<div style="text-align:center;margin-top:5px;font-size:11px;color:var(--faint)">${footHint}</div>`;
+  return {html:s,x0,y0,cw,ch,gi};
+}
+
+function initGameState(sec){
+  sec.game={groups:[],selectedCells:new Set(),gridInfo:kmGI(sec.problem.varCount),x0:0,y0:0,cw:0,ch:0,feedbackTid:null};
+}
+
+function renderGameGroups(sec){
+  const svg=sec.el.querySelector('.kmap-game-svg'); if(!svg) return;
+  const layer=svg.querySelector('.km-groups-layer'),{x0,y0,cw,ch}=sec.game;
+  layer.innerHTML='';
+  sec.game.groups.forEach((g,i)=>{
+    const ins=3+Math.min(i,4)*2.2;
+    const rs=kmSpans(g.rows), cs=kmSpans(g.cols);
+    const grp=document.createElementNS('http://www.w3.org/2000/svg','g');
+    grp.classList.add('km-group');
+
+    for(const [r0,r1] of rs){
+      for(const [c0,c1] of cs){
+        const gx=x0+c0*cw+ins, gy=y0+r0*ch+ins;
+        const gw=(c1-c0+1)*cw-2*ins, gh=(r1-r0+1)*ch-2*ins;
+        const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+        ['x','y','width','height','rx'].forEach((k,ki)=>rect.setAttribute(k,[gx,gy,gw,gh,8][ki]));
+        rect.style.cssText=`fill:${g.color};fill-opacity:.16;stroke:${g.color};stroke-width:2.5`;
+        rect.classList.add('km-group-rect','new');
+        grp.appendChild(rect);
+      }
+    }
+
+    const pR=rs[0], pC=cs[0];
+    const px=x0+pC[0]*cw+ins, py=y0+pR[0]*ch+ins;
+    const pw=(pC[1]-pC[0]+1)*cw-2*ins, ph=(pR[1]-pR[0]+1)*ch-2*ins;
+
+    const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
+    lbl.setAttribute('x',px+pw/2); lbl.setAttribute('y',py+ph/2+4);
+    lbl.classList.add('km-group-label');
+    lbl.textContent=termPlain(g.pi,sec.problem.varCount);
+    grp.appendChild(lbl);
+
+    const dx=px+pw-2, dy=py+8;
+    const delC=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    delC.setAttribute('cx',dx); delC.setAttribute('cy',dy); delC.setAttribute('r','9');
+    delC.style.cssText=`fill:rgba(0,0,0,.75);stroke:${g.color};stroke-width:1.6;cursor:pointer`;
+    delC.classList.add('km-group-del');
+
+    const delT=document.createElementNS('http://www.w3.org/2000/svg','text');
+    delT.setAttribute('x',dx); delT.setAttribute('y',dy+4); delT.setAttribute('text-anchor','middle');
+    delT.style.cssText='fill:#fff;font-size:13px;font-weight:bold;pointer-events:none';
+    delT.classList.add('km-group-del'); delT.textContent='×';
+
+    delC.addEventListener('click',e=>{
+      e.stopPropagation();
+      sec.game.groups.splice(i,1);
+      renderGameGroups(sec);
+      updateGameInfo(sec);
+      syncGameBtns(sec);
+    });
+
+    grp.appendChild(delC); grp.appendChild(delT);
+    layer.appendChild(grp);
+  });
+  setTimeout(()=>layer.querySelectorAll('.new').forEach(el=>el.classList.remove('new')),250);
+}
+
+function syncGameBtns(sec){
+  const n=sec.game?sec.game.groups.length:0;
+  sec.ref.undo.disabled=n===0;
+  sec.ref.cleargroups.disabled=n===0;
+}
+
+function updateGameInfo(sec){
+  const el=sec.ref.gameinfo; if(!el) return;
+  const n=sec.game?sec.game.groups.length:0;
+  if(n===0){el.innerHTML='<span style="color:var(--faint)">คลิกช่อง หรือลากบน K-Map เพื่อวงกลุ่ม</span>';return;}
+  const lits=sec.game.groups.reduce((a,g)=>a+literals(g.pi,sec.problem.varCount),0);
+  el.innerHTML=`<b>${n}</b> กลุ่ม · <b>${lits}</b> literal`;
+}
+
+function showGameMsg(sec,msg,type){
+  const el=sec.ref.gameinfo; if(!el) return;
+  el.innerHTML=`<span style="color:var(--${type==='wrong'?'red':type==='info'?'cyan':'green'})">${msg}</span>`;
+  clearTimeout(sec.game.feedbackTid);
+  sec.game.feedbackTid=setTimeout(()=>updateGameInfo(sec),2500);
+}
+
+function updateSelectionUI(sec){
+  if(!sec.game) return;
+  const svg=sec.el.querySelector('.kmap-game-svg');
+  if(svg){
+    svg.querySelectorAll('.km-icell').forEach(c=>{
+      const idx=+c.dataset.idx;
+      c.classList.toggle('selected', sec.game.selectedCells.has(idx));
+    });
+  }
+  const bar=sec.ref.selectbar, btn=sec.ref.addgroup, hint=sec.ref.selecthint;
+  if(!bar) return;
+  const count=sec.game.selectedCells.size;
+  if(count===0){
+    bar.style.display='none';
+    return;
+  }
+  bar.style.display='flex';
+  const {minterms,dontcares,varCount}=sec.problem;
+  const on=new Set(minterms), dc=new Set(dontcares);
+  const validDef=validateCellGroup([...sec.game.selectedCells], varCount);
+
+  if(!validDef){
+    btn.disabled=true;
+    btn.textContent='＋ วงกลุ่มนี้';
+    hint.innerHTML=`เลือกแล้ว ${count} ช่อง (ต้องเป็นกลุ่มขนาด 1, 2, 4, 8)`;
+    return;
+  }
+  let coversZero=false;
+  for(const idx of validDef.cells){
+    if(!on.has(idx)&&!dc.has(idx)){coversZero=true;break;}
+  }
+  if(coversZero){
+    btn.disabled=true;
+    btn.textContent='＋ วงกลุ่มนี้';
+    hint.innerHTML='<span style="color:var(--red)">⚠️ มีช่องที่เป็น 0 — ห้ามวงรวม</span>';
+    return;
+  }
+  btn.disabled=false;
+  const wrapTag=validDef.wrapType==='corner'?' ⛶ วง 4 มุม':
+                validDef.wrapType==='wrap-col'?' ↔ วงข้ามซ้าย-ขวา':
+                validDef.wrapType==='wrap-row'?' ↕ วงข้ามบน-ล่าง':'';
+  btn.innerHTML=`＋ วงกลุ่มนี้ (${count} ช่อง · ${termPlain(validDef.pi, varCount)})${wrapTag}`;
+  hint.innerHTML='<span style="color:var(--green)">✓ รูปแบบถูกต้อง! กดปุ่มหรือกด Enter</span>';
+}
+
+function clearSelection(sec){
+  if(sec.game){
+    sec.game.selectedCells.clear();
+    updateSelectionUI(sec);
+  }
+}
+
+function addGroupDef(sec, groupDef){
+  const {minterms,dontcares}=sec.problem;
+  const on=new Set(minterms), dc=new Set(dontcares);
+  for(const idx of groupDef.cells){
+    if(!on.has(idx)&&!dc.has(idx)){
+      showGameMsg(sec,'กลุ่มนี้ครอบคลุม 0 — ลองใหม่!','wrong');
+      return false;
+    }
+  }
+  const cellKey=[...groupDef.cells].sort((a,b)=>a-b).join(',');
+  if(sec.game.groups.some(g=>[...g.cells].sort((a,b)=>a-b).join(',')===cellKey)){
+    showGameMsg(sec,'กลุ่มนี้วงไปแล้ว!','info');
+    return false;
+  }
+  groupDef.color=KM_PALETTE[sec.game.groups.length%KM_PALETTE.length];
+  sec.game.groups.push(groupDef);
+  renderGameGroups(sec);
+  const wrapMsg=groupDef.wrapType==='corner'?' (วง 4 มุม)':
+                groupDef.wrapType==='wrap-col'?' (วงข้ามซ้าย-ขวา)':
+                groupDef.wrapType==='wrap-row'?' (วงข้ามบน-ล่าง)':'';
+  showGameMsg(sec,`เพิ่มกลุ่มที่ ${sec.game.groups.length}${wrapMsg} ✓`,'green');
+  updateGameInfo(sec);
+  syncGameBtns(sec);
+  return true;
+}
+
+function confirmSelectionGroup(sec){
+  if(!sec.game||sec.game.selectedCells.size===0) return;
+  const validDef=validateCellGroup([...sec.game.selectedCells], sec.problem.varCount);
+  if(validDef){
+    if(addGroupDef(sec, validDef)){
+      clearSelection(sec);
+    }
+  }
+}
+
+function initGameInteraction(sec){
+  const svg=sec.el.querySelector('.kmap-game-svg'); if(!svg) return;
+  const {x0,y0,cw,ch,gridInfo:gi}=sec.game;
+  const prevLayer=svg.querySelector('.km-preview-layer');
+  let sR=-1, sC=-1, startX=0, startY=0, isDragging=false, moved=false;
+
+  function evtXY(e){
+    const b=svg.getBoundingClientRect(), vb=svg.viewBox.baseVal;
+    const sx=vb.width/b.width, sy=vb.height/b.height;
+    let cx, cy;
+    if(e.changedTouches&&e.changedTouches.length){cx=e.changedTouches[0].clientX; cy=e.changedTouches[0].clientY;}
+    else if(e.touches&&e.touches.length){cx=e.touches[0].clientX; cy=e.touches[0].clientY;}
+    else{cx=e.clientX; cy=e.clientY;}
+    return {x:(cx-b.left)*sx, y:(cy-b.top)*sy};
+  }
+
+  function cellAtXY(x,y){
+    const c=Math.floor((x-x0)/cw), r=Math.floor((y-y0)/ch);
+    return {r, c, inside: r>=0&&r<gi.rows&&c>=0&&c<gi.cols};
+  }
+
+  function snap(s,e,max){
+    let sz=Math.abs(e-s)+1, p=1;
+    while(p<sz) p*=2;
+    p=Math.min(p,max);
+    let a=Math.min(s,e), b=a+p-1;
+    if(b>=max){ b=max-1; a=b-p+1; }
+    return [Math.max(0,a),b];
+  }
+
+  function resolveDragGroup(r0,c0,r1,c1,rawX,rawY){
+    let cols;
+    if(gi.cols===4&&((c0===3&&rawX>x0+gi.cols*cw)||(c0===0&&rawX<x0)||(c0===3&&c1===0)||(c0===0&&c1===3))){
+      cols=[0,3];
+    } else {
+      const [sc,ec]=snap(c0,Math.max(0,Math.min(gi.cols-1,c1)),gi.cols);
+      cols=[...Array(ec-sc+1).keys()].map(i=>i+sc);
+    }
+
+    let rows;
+    if(gi.rows===4&&((r0===3&&rawY>y0+gi.rows*ch)||(r0===0&&rawY<y0)||(r0===3&&r1===0)||(r0===0&&r1===3))){
+      rows=[0,3];
+    } else {
+      const [sr,er]=snap(r0,Math.max(0,Math.min(gi.rows-1,r1)),gi.rows);
+      rows=[...Array(er-sr+1).keys()].map(i=>i+sr);
+    }
+
+    const cells=[];
+    for(const r of rows) for(const c of cols) cells.push(grayIndex(r,c,sec.problem.varCount));
+    return validateCellGroup(cells, sec.problem.varCount);
+  }
+
+  function renderPreview(groupDef){
+    if(!prevLayer) return;
+    prevLayer.innerHTML='';
+    if(!groupDef) return;
+    const rs=kmSpans(groupDef.rows), cs=kmSpans(groupDef.cols);
+    for(const [r0,r1] of rs) for(const [c0,c1] of cs){
+      const rx=x0+c0*cw+2, ry=y0+r0*ch+2;
+      const rw=(c1-c0+1)*cw-4, rh=(r1-r0+1)*ch-4;
+      const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      ['x','y','width','height'].forEach((k,ki)=>rect.setAttribute(k,[rx,ry,rw,rh][ki]));
+      rect.classList.add('km-preview-rect');
+      prevLayer.appendChild(rect);
+    }
+  }
+
+  function onDown(e){
+    if(sec.phase!=='running') return;
+    const {x,y}=evtXY(e);
+    const cell=cellAtXY(x,y);
+    if(!cell.inside) return;
+    isDragging=true; moved=false;
+    sR=cell.r; sC=cell.c;
+    startX=x; startY=y;
+    e.preventDefault();
+  }
+
+  function onMove(e){
+    if(!isDragging) return;
+    const {x,y}=evtXY(e);
+    if(!moved&&Math.hypot(x-startX,y-startY)>6){
+      moved=true;
+    }
+    if(moved){
+      const cell=cellAtXY(x,y);
+      const gDef=resolveDragGroup(sR,sC,cell.r,cell.c,x,y);
+      renderPreview(gDef);
+    }
+    e.preventDefault();
+  }
+
+  function onUp(e){
+    if(!isDragging) return;
+    isDragging=false;
+    if(prevLayer) prevLayer.innerHTML='';
+    const {x,y}=evtXY(e);
+
+    if(!moved){
+      const cell=cellAtXY(x,y);
+      if(cell.inside){
+        const idx=grayIndex(cell.r,cell.c,sec.problem.varCount);
+        if(sec.game.selectedCells.has(idx)){
+          sec.game.selectedCells.delete(idx);
+        } else {
+          sec.game.selectedCells.add(idx);
+        }
+        updateSelectionUI(sec);
+      }
+    } else {
+      const cell=cellAtXY(x,y);
+      const gDef=resolveDragGroup(sR,sC,cell.r,cell.c,x,y);
+      if(gDef){
+        addGroupDef(sec, gDef);
+        clearSelection(sec);
+      }
+    }
+  }
+
+  function onCancel(){
+    isDragging=false; moved=false;
+    if(prevLayer) prevLayer.innerHTML='';
+  }
+
+  svg.addEventListener('mousedown',e=>{
+    if(sec.plotState==='plotting'){
+      handleCellPlotClick(e);
+    } else {
+      onDown(e);
+    }
+  });
+  window.addEventListener('mousemove',e=>{
+    if(sec.plotState!=='plotting') onMove(e);
+  });
+  window.addEventListener('mouseup',e=>{
+    if(sec.plotState!=='plotting') onUp(e);
+  });
+  svg.addEventListener('mouseleave',e=>{
+    if(sec.plotState!=='plotting') onCancel();
+  });
+
+  svg.addEventListener('touchstart',e=>{
+    if(sec.plotState==='plotting'){
+      handleCellPlotClick(e);
+    } else {
+      onDown(e);
+    }
+  },{passive:false});
+  svg.addEventListener('touchmove',e=>{
+    if(sec.plotState!=='plotting') onMove(e);
+  },{passive:false});
+  svg.addEventListener('touchend',e=>{
+    if(sec.plotState!=='plotting') onUp(e);
+  },{passive:false});
+  svg.addEventListener('touchcancel',e=>{
+    if(sec.plotState!=='plotting') onCancel();
+  });
+
+  function handleCellPlotClick(e){
+    if(sec.phase!=='running') return;
+    const {x,y}=evtXY(e);
+    const cell=cellAtXY(x,y);
+    if(!cell.inside) return;
+    const idx=grayIndex(cell.r,cell.c,sec.problem.varCount);
+    cycleCellPlot(sec, idx);
+    e.preventDefault();
+  }
+
+  sec.el.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' '){
+      if(sec.game&&sec.game.selectedCells.size>0){
+        confirmSelectionGroup(sec);
+        e.preventDefault();
+      }
+    }
+  });
+}
+
+function cycleCellPlot(sec, idx){
+  if(sec.plotState!=='plotting') return;
+  const cur=sec.userCells.get(idx)||'0';
+  const nxt=cur==='0'?'1':cur==='1'?'x':'0';
+  sec.userCells.set(idx,nxt);
+
+  const svg=sec.el.querySelector('.kmap-game-svg');
+  if(svg){
+    const rect=svg.querySelector(`.km-icell[data-idx="${idx}"]`);
+    if(rect){
+      rect.classList.remove('one','dc','km-plot-err');
+      if(nxt==='1') rect.classList.add('one');
+      else if(nxt==='x') rect.classList.add('dc');
+      const valEl=rect.nextElementSibling ? rect.nextElementSibling.nextElementSibling : null;
+      if(valEl && valEl.classList.contains('km-ival')){
+        valEl.textContent=nxt;
+        valEl.className='km-ival'+(nxt==='1'?' one':nxt==='x'?' dc':'');
+      }
+    }
+  }
+  updatePlotMatchedChips(sec);
+}
+
+function updatePlotMatchedChips(sec){
+  const chips=sec.ref.prob.querySelectorAll('.plot-chip');
+  chips.forEach(chip=>{
+    const m=chip.dataset.plotM, d=chip.dataset.plotD;
+    if(m!=null){
+      const val=sec.userCells.get(+m);
+      chip.classList.toggle('matched', val==='1');
+    } else if(d!=null){
+      const val=sec.userCells.get(+d);
+      chip.classList.toggle('matched', val==='x');
+    }
+  });
+}
+
+function doCheckPlotting(sec){
+  if(!sec.problem || sec.plotState!=='plotting') return;
+  const {minterms,dontcares,varCount}=sec.problem;
+  const total=1<<varCount;
+  const on=new Set(minterms), dc=new Set(dontcares);
+  const errors=[];
+
+  for(let i=0;i<total;i++){
+    const userVal=sec.userCells.get(i)||'0';
+    const expVal=on.has(i)?'1':dc.has(i)?'x':'0';
+    if(userVal!==expVal){
+      errors.push({idx:i, userVal, expVal});
+    }
+  }
+
+  const svg=sec.el.querySelector('.kmap-game-svg');
+  if(errors.length>0){
+    if(svg){
+      errors.forEach(err=>{
+        const rect=svg.querySelector(`.km-icell[data-idx="${err.idx}"]`);
+        if(rect){
+          rect.classList.add('km-plot-err');
+          setTimeout(()=>rect.classList.remove('km-plot-err'), 2100);
+        }
+      });
+    }
+    const hintText=`⚠️ มี ${errors.length} ช่องที่ยังลงค่าไม่ตรงกับโจทย์ (ช่องที่ผิดจะกระพริบสีแดง)`;
+    sec.ref.plothint.innerHTML=`<span style="color:var(--red);font-weight:700">${hintText}</span>`;
+    return;
+  }
+
+  // All correct!
+  sec.ref.plothint.innerHTML=`<span style="color:var(--green);font-weight:700">🎉 ลงค่าตารางถูกต้อง 100%! ปลดล็อกโหมดวงกลุ่ม</span>`;
+  setTimeout(()=>{
+    unlockGroupingPhase(sec);
+  }, 450);
+}
+
+function doAutoFillPlot(sec){
+  if(!sec.problem) return;
+  const {minterms,dontcares,varCount}=sec.problem;
+  const total=1<<varCount;
+  const on=new Set(minterms), dc=new Set(dontcares);
+  for(let i=0;i<total;i++){
+    sec.userCells.set(i, on.has(i)?'1':dc.has(i)?'x':'0');
+  }
+  updatePlotMatchedChips(sec);
+  unlockGroupingPhase(sec);
+}
+
+function unlockGroupingPhase(sec){
+  sec.plotState='solved';
+  if(sec.ref.plotbar) sec.ref.plotbar.style.display='none';
+  if(sec.ref.gamecontrols) sec.ref.gamecontrols.style.display='';
+  if(sec.ref.gameinfo) sec.ref.gameinfo.style.display='';
+  if(sec.ref.check) {
+    sec.ref.check.style.display='';
+    sec.ref.check.disabled=false;
+  }
+  const gd=buildGameKmap(sec.problem, sec);
+  sec.ref.kmgame.innerHTML=gd.html;
+  clearSelection(sec);
+  syncGameBtns(sec);
+  updateGameInfo(sec);
+  initGameInteraction(sec);
+}
+
+function doCheckAnswer(sec){
+  if(!sec.problem||!sec.game||sec.game.groups.length===0){
+    showGameMsg(sec,'ยังไม่ได้วงกลุ่ม','wrong');
+    return;
+  }
+  const isHardcore = (cfg.playMode && cfg.playMode.value==='hardcore');
+  const {minterms,dontcares,varCount}=sec.problem;
+  const on=new Set(minterms), dc=new Set(dontcares);
+  const now=performance.now();
+
+  const userPIs=sec.game.groups.map(g=>g.pi);
+  const userLits=userPIs.reduce((a,pi)=>a+literals(pi,varCount),0), userN=userPIs.length;
+  const opt=sec.problem.result;
+  const optLits=opt.const!=null?0:opt.terms.reduce((a,t)=>a+literals(t,varCount),0);
+  const optN=opt.const!=null?(opt.const?1:0):opt.terms.length;
+  const timeUsed=sec.timer.mode==='down'?fmt(sec.timer.startBase-tVal(sec.timer,now)):fmt(tVal(sec.timer,now));
+  const userSOP=userPIs.map((pi,i)=>`<span style="color:${sec.game.groups[i].color}">${termHTML(pi,varCount)}</span>`).join('<span class="op">+</span>');
+
+  // 1. Check if any group covers 0
+  for(const g of sec.game.groups){
+    for(const idx of g.cells){
+      if(!on.has(idx)&&!dc.has(idx)){
+        if(isHardcore){
+          finishHardcoreFail(sec, now, userSOP, userN, userLits, opt, optN, optLits, timeUsed, '❌ ผิดพลาด (Hardcore) — มีกลุ่มที่ครอบคลุม cell ที่เป็น 0');
+          return;
+        }
+        showCheckResult(sec,'wrong','❌ มีกลุ่มที่ครอบคลุม cell ที่เป็น 0');
+        return;
+      }
+    }
+  }
+
+  // 2. Check for uncovered minterms
+  const covered=new Set();
+  for(const g of sec.game.groups) for(const idx of g.cells){
+    if(on.has(idx)) covered.add(idx);
+  }
+  const uncov=minterms.filter(m=>!covered.has(m));
+  if(uncov.length){
+    if(isHardcore){
+      finishHardcoreFail(sec, now, userSOP, userN, userLits, opt, optN, optLits, timeUsed, `❌ ผิดพลาด (Hardcore) — วงไม่ครบ ขาดอีก ${uncov.length} minterm`);
+      return;
+    }
+    const svg=sec.el.querySelector('.kmap-game-svg');
+    if(svg){
+      const us=new Set(uncov);
+      svg.querySelectorAll('.km-icell').forEach(el=>{
+        if(us.has(+el.dataset.idx)){
+          el.classList.add('km-uncovered');
+          setTimeout(()=>el.classList.remove('km-uncovered'),3000);
+        }
+      });
+    }
+    showCheckResult(sec,'partial',`⚠️ ยังมี ${uncov.length} minterm ที่ยังไม่ครอบคลุม`);
+    return;
+  }
+
+  // 3. Check optimality
+  const isOpt=userN<=optN&&userLits<=optLits;
+  if(!isOpt){
+    if(isHardcore){
+      finishHardcoreFail(sec, now, userSOP, userN, userLits, opt, optN, optLits, timeUsed, '❌ ผิดพลาด (Hardcore) — ยังลดรูปไม่สั้นที่สุด!');
+      return;
+    }
+    const detail=`คำตอบของคุณ: f = ${userSOP} (<b>${userN}</b> พจน์, <b>${userLits}</b> literal)<br>`+
+      `เป้าหมายสั้นที่สุด: <b>${optN}</b> พจน์, <b>${optLits}</b> literal <span style="color:var(--amber)">(ลองรวมกลุ่มให้ใหญ่ขึ้น หรือตัดกลุ่มที่ซ้ำซ้อน)</span>`;
+    showCheckResult(sec,'partial','⚠️ ยังไม่ถูกต้อง — ยังลดรูปไม่สั้นที่สุด!',detail);
+    return;
+  }
+
+  // Correct & optimal!
+  if(sec.timer.running) tFreeze(sec.timer,now);
+  sec.phase='revealed';
+  const isFirstReward = !sec.streakRewarded;
+  if(isFirstReward){
+    sec.streakRewarded = true;
+    onProblemSolved(sec);
+  }
+  const hardTag = isHardcore ? ' · <span class="chip" style="background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.4)">💀 Hardcore Clear</span>' : '';
+  const detail=`f = ${userSOP}<br><span class="chip time">ใช้เวลา ${timeUsed}</span> · <span class="chip">${userN} พจน์</span> · <span class="chip">${userLits} literal</span>`+
+    (isFirstReward ? ` · <span class="chip" style="background:rgba(251,146,60,.18);color:#fdba74;border:1px solid rgba(251,146,60,.4)">🔥 Streak ${streakStats.current}</span>` : '') + hardTag;
+  showCheckResult(sec,'correct','🎉 ถูกต้อง 100%! ลดรูปสั้นที่สุด (Optimal Minimal SOP)',detail);
+  revealSolutionBox(sec);
+  updateCard(sec,now);
+}
+
+function finishHardcoreFail(sec, now, userSOP, userN, userLits, opt, optN, optLits, timeUsed, titleMsg){
+  if(sec.timer.running) tFreeze(sec.timer,now);
+  sec.phase='revealed';
+  if(!sec.streakRewarded) onStreakBreak('hardcore_fail');
+  const detail=`คำตอบของคุณ: f = ${userSOP} (<b>${userN}</b> พจน์, <b>${userLits}</b> literal)<br>`+
+    `เฉลยที่สั้นที่สุด: f = ${sopHTML(opt)} (<b>${optN}</b> พจน์, <b>${optLits}</b> literal)<br>`+
+    `<span class="chip time">ใช้เวลา ${timeUsed}</span> · <span class="chip" style="background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.4)">💀 Hardcore Fail</span>`;
+  showCheckResult(sec,'wrong',titleMsg,detail);
+  revealSolutionBox(sec);
+  updateCard(sec,now);
+}
+
+function revealSolutionBox(sec){
+  if(!sec.problem) return;
+  const res=sec.problem.result;
+  sec.ref.eq.innerHTML='f = '+sopHTML(res);
+  const terms=res.const!=null?(res.const===1?1:0):res.terms.length;
+  const lits=res.const!=null?0:res.terms.reduce((a,t)=>a+literals(t,res.varCount),0);
+  sec.ref.ansmeta.innerHTML=`<span class="chip">${terms} พจน์</span><span class="chip">${lits} literal</span>`;
+  sec.ref.kmap.innerHTML=buildKmapSVG(sec.problem,res);
+  sec.ref.answer.classList.add('show');
+  if(sec.ref.check) sec.ref.check.disabled=true;
+  if(sec.ref.reveal) sec.ref.reveal.disabled=true;
+}
+
+function syncAllCheckBtns(){
+  const isHc = cfg.playMode && cfg.playMode.value === 'hardcore';
+  state.sections.forEach(sec=>{
+    if(sec.ref && sec.ref.check){
+      sec.ref.check.innerHTML = isHc ? '💀 ส่งคำตอบ' : '✓ ตรวจ';
+      sec.ref.check.style.color = isHc ? '#f87171' : 'var(--cyan)';
+      sec.ref.check.style.borderColor = isHc ? 'rgba(248,113,122,.5)' : 'rgba(34,211,238,.45)';
+    }
+  });
+}
+
+function showCheckResult(sec,type,msg,detail){
+  const el=sec.ref.result; if(!el) return;
+  el.className='km-result show '+type;
+  el.innerHTML=`<div class="result-text">${msg}</div>`+(detail?`<div class="result-detail">${detail}</div>`:'');
+}
+function setupGameUI(sec,show){
+  if(show){
+    initGameState(sec);
+    const isManual = (cfg.plotMode && cfg.plotMode.value==='manual');
+    sec.plotState = isManual ? 'plotting' : 'solved';
+    sec.userCells = new Map();
+    if(isManual){
+      const total = 1<<sec.problem.varCount;
+      for(let i=0; i<total; i++) sec.userCells.set(i, '0');
+    }
+
+    const gd=buildGameKmap(sec.problem, sec);
+    sec.game.x0=gd.x0;sec.game.y0=gd.y0;sec.game.cw=gd.cw;sec.game.ch=gd.ch;
+    sec.ref.kmgame.innerHTML=gd.html;
+    sec.ref.kmgame.classList.add('show');
+
+    if(isManual){
+      sec.ref.plotbar.style.display='flex';
+      sec.ref.plothint.innerHTML='คลิกที่ช่องเพื่อสลับค่า: 0 → 1 → x (เสร็จแล้วกด "ตรวจการลงตาราง")';
+      sec.ref.gamecontrols.style.display='none';
+      sec.ref.gameinfo.style.display='none';
+      sec.ref.check.style.display='none';
+      updatePlotMatchedChips(sec);
+    } else {
+      sec.ref.plotbar.style.display='none';
+      sec.ref.gamecontrols.style.display='';
+      sec.ref.gameinfo.style.display='';
+      sec.ref.check.style.display='';
+      sec.ref.check.disabled=false;
+      clearSelection(sec);
+      syncGameBtns(sec); updateGameInfo(sec);
+    }
+    syncAllCheckBtns();
+    initGameInteraction(sec);
+  }else{
+    sec.ref.kmgame.classList.remove('show'); sec.ref.kmgame.innerHTML='';
+    sec.ref.plotbar.style.display='none';
+    sec.ref.gamecontrols.style.display='none';
+    sec.ref.gameinfo.style.display='none';
+    sec.ref.check.style.display='none';
+    if(sec.ref.selectbar) sec.ref.selectbar.style.display='none';
+    sec.ref.result.className='km-result'; sec.ref.result.innerHTML='';
+    sec.game=null;
+  }
+}
+
 /* ---- per-frame timer/UI update ---- */
 function updateCard(sec,now){
   const t=sec.timer, r=sec.ref;
   let v=tVal(t,now);
-  if(t.mode==='down'&&t.running&&v<=0){ v=0; t.base=0; t.running=false; sec.phase='timeout'; }
+  if(t.mode==='down'&&t.running&&v<=0){
+    v=0; t.base=0; t.running=false;
+    if(sec.phase==='running'){
+      sec.phase='timeout';
+      if(!sec.streakRewarded){
+        onStreakBreak('timeout');
+      }
+    }
+  }
 
   // card class (method color + phase state) — only rewrite when it actually changes,
   // otherwise the 200ms tick perpetually restarts the border/background transitions and freezes them
@@ -665,8 +1666,7 @@ function updateCard(sec,now){
   // clock text + color
   if(sec.phase==='idle'){
     r.clock.className='t-clock idle';
-    const fm=cfg.method.value;   // forced method → show its time; random → dash (decided at generate)
-    r.clock.textContent = t.mode!=='down' ? '00:00' : (fm==='kmap'?fmt(targetMs('kmap')):fm==='bool'?fmt(targetMs('bool')):'--:--');
+    r.clock.textContent = t.mode!=='down' ? '00:00' : fmt(targetMs());
     r.status.className='t-status'; r.status.textContent='พร้อมสร้างโจทย์';
     r.fill.className='t-fill'; r.fill.style.width='100%'; r.fill.style.background='var(--bg4)';
     return;
@@ -753,24 +1753,30 @@ cfg.cols.onchange=()=>updateLayout();
 window.addEventListener('resize',updateLayout);
 window.addEventListener('load',updateLayout);   // settle after fonts/layout finalize
 cfg.tmode.onchange=()=>{const up=cfg.tmode.value==='up';
-  ['timeFieldK','timeFieldB'].forEach(id=>$(id).style.opacity=up?'.45':'1');
-  [cfg.minK,cfg.secK,cfg.minB,cfg.secB].forEach(i=>i.disabled=up);
+  $('timeFieldK').style.opacity=up?'.45':'1';
+  [cfg.minK,cfg.secK].forEach(i=>i.disabled=up);
   state.sections.forEach(s=>{if(s.phase==='idle')s.timer=newTimer(cfg.tmode.value);});tick();};
-[cfg.minK,cfg.secK,cfg.minB,cfg.secB].forEach(inp=>inp.onchange=()=>tick());
-cfg.method.onchange=()=>tick();   // refresh idle clock preview when forced method changes
-cfg.vars.onchange=()=>{state.randomVars=false;syncRandomVarsBtn();};
-$('cfgRandomVars').onclick=()=>{state.randomVars=!state.randomVars;syncRandomVarsBtn();};
-function syncRandomVarsBtn(){
-  const b=$('cfgRandomVars');
-  b.classList.toggle('active',state.randomVars);
-  b.textContent=state.randomVars?'✓ สุ่ม 2 / 3 input ทุกโจทย์':'🎲 สุ่ม 2 / 3 input';
+[cfg.minK,cfg.secK].forEach(inp=>inp.onchange=()=>tick());
+cfg.vars.onchange=()=>tick();
+cfg.playMode.onchange=()=>syncAllCheckBtns();
+
+/* ---- streak reset button ---- */
+const sResetBtn = $('streakResetBtn');
+if(sResetBtn){
+  sResetBtn.onclick=()=>{
+    if(confirm('ต้องการรีเซ็ตสถิติ Streak และจำนวนข้อที่ทำถูกทั้งหมดหรือไม่?')){
+      streakStats={current:0,best:0,total:0};
+      updateStreakUI();
+      showStreakToast('↺ รีเซ็ตสถิติ Streak เรียบร้อยแล้ว');
+    }
+  };
 }
 
 /* ---- init ---- */
 setCount(+cfg.count.value);
 updateLayout();
 syncPauseBtn();
-syncRandomVarsBtn();
+updateStreakUI();
 </script>
 </body>
 </html>
